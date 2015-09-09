@@ -20,14 +20,16 @@ def wise_mag_to_jy(wise_mag, corr=None, mujy=None):
 
 
 # convert a flux to nulnu at a certain wavelength in the unit of erg/s
-# wav should be in micron, and flux should be in microJy
-def flux_to_nulnu(flux, z, wav, lsun=None, cosmo=None):
+# wav should be in micron, and flux should be in Jy
+def flux_to_nulnu(flux, z, wav, ld=None, lsun=None, cosmo=None,mujy=None):
     if cosmo is None:
         # print 'no preset cosmology,use FlatLCDM w/ h0.7'
         cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
     dlum = Distance(z=z, unit=u.cm, cosmology=cosmo).value
     freq = 3e14/wav
-    nulnu = np.log10(flux*4*c.pi*dlum**2*freq/((1.+z)*1e29))
+    if mujy:jy2erg=1e29
+    else:jy2erg=1e23
+    nulnu = np.log10(flux*4*np.pi*dlum**2*freq/((1.+z)*jy2erg))
     if lsun is True:
         nulnu -= 33.5827
     return nulnu

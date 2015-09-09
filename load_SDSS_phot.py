@@ -1,0 +1,49 @@
+
+import numpy as np
+import urllib2
+import urllib
+import os
+import os.path
+import argparse
+import logging
+import pandas as pd
+from astropy.table import Table as tab
+
+def load_SDSS_phot(ra,dec,search_radius,pandas=None):
+    '''
+    ra in degrees, dec in degrees, search_radius in arcmin.
+    '''
+    def gen_SDSS_sql(ra, dec, search_radius):
+        query_out  = ' p.objID, p.type, p.ra, p.dec, p.u, p.g, p.r, p.i, p.z, p.Err_u, p.Err_g, p.Err_r, p.Err_i, p.Err_z'
+        query_from = ' FROM fGetNearbyObjEq({ra},{dec},{search_radius}) n, PhotoPrimary p WHERE n.objID=p.objID'.format(ra=str(ra),dec=str(dec),search_radius=str(search_radius))
+        query_str='SELECT'+query_out+query_from
+        return query_str 
+
+    def query_SDSS(sSQL_query):
+    	sURL = 'http://cas.sdss.org/dr7/en/tools/search/x_sql.asp'
+    	# for POST request
+    	values = {'cmd': sSQL_query,
+    						'format': 'csv'}
+    	data = urllib.urlencode(values)
+    	request = urllib2.Request(sURL, data)
+    	response = urllib2.urlopen(request)
+    	return response.read()
+    	
+    sql_str=gen_SDSS_sql(ra,dec,search_radius)
+    sdss_ds=query_SDSS(sql_str)
+    lines=sdss_ds.split('\n')
+    print(str(len(lines)-2)+' SDSS objects found')
+    cols=lines[0].split(',')
+    #pop columnes and the EOF line
+    lines.pop(0)
+    lines.pop(-1)
+    rows=[]
+    for i in lines:
+        tt=i.split(',')
+        tt=map(float,tt)
+        rows.append(tt)
+    tab_out=tab(rows=rows,names=cols)
+    if pandas:tab_out=pd.DataFrame.from_records(tab_out._data)
+    #should fix objID to string
+    #should find out what p.type means
+    return tab_out
