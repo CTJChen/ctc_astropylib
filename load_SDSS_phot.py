@@ -9,11 +9,11 @@ import logging
 import pandas as pd
 from astropy.table import Table as tab
 
-def load_SDSS_phot(ra,dec,search_radius,pandas=None):
+def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=None):
     '''
     ra in degrees, dec in degrees, search_radius in arcmin.
     '''
-    def gen_SDSS_sql(ra, dec, search_radius):
+    def gen_SDSS_sql(ra, dec, search_radius, second=None, family=None):
         query_out  = ' p.objID, p.type, p.ra, p.dec, p.u, p.g, p.r, p.i, p.z, p.Err_u, p.Err_g, p.Err_r, p.Err_i, p.Err_z'
         query_from = ' FROM fGetNearbyObjEq({ra},{dec},{search_radius}) n, PhotoPrimary p WHERE n.objID=p.objID'.format(ra=str(ra),dec=str(dec),search_radius=str(search_radius))
         query_str='SELECT'+query_out+query_from
@@ -29,7 +29,7 @@ def load_SDSS_phot(ra,dec,search_radius,pandas=None):
     	response = urllib2.urlopen(request)
     	return response.read()
     	
-    sql_str=gen_SDSS_sql(ra,dec,search_radius)
+    sql_str=gen_SDSS_sql(ra,dec,search_radius,second=second, family=family)
     sdss_ds=query_SDSS(sql_str)
     lines=sdss_ds.split('\n')
     print(str(len(lines)-2)+' SDSS objects found')
@@ -44,6 +44,29 @@ def load_SDSS_phot(ra,dec,search_radius,pandas=None):
         rows.append(tt)
     tab_out=tab(rows=rows,names=cols)
     if pandas:tab_out=pd.DataFrame.from_records(tab_out._data)
+    #should fix objID to string
+    #should find out what p.type means
+    return tab_out
+
+
+def load_SDSS_phot_dr12(ra,dec,search_radius,pandas=None, limit=None):
+    '''
+    ra in degrees, dec in degrees, search_radius in arcmin.
+    '''
+    #creat url
+    sURL='http://skyserver.sdss.org/dr12/en/tools/search/x_radial.aspx?'
+    ra_str='ra='+str(ra)+'&'
+    dec_str='dec='+str(dec)+'&'
+    radius_str='radius='+str(search_radius)+'&'
+    if not limit: limit=20
+    limit_str='format=csv&limit='+str(limit)
+    # for POST request
+    urlquery=sURL+ra_str+dec_str+radius_str+limit_str
+    response=urllib2.urlopen(urlquery)
+    if pandas:
+        tab_out=pd.read_csv(response,comment='#')
+    else:
+        tab_out=ascii.read(response, delimiter=',')
     #should fix objID to string
     #should find out what p.type means
     return tab_out
