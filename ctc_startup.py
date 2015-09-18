@@ -3,6 +3,7 @@ print("setting cos_flat as flat LCDM, H=70, Om=0.3 cosmology")
 print("usually takes a few seconds")
 
 from chen_observ import *
+from ctc_arrays import *
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,3 +11,7 @@ from astropy import units as u
 from astropy.cosmology import FlatLambdaCDM
 cos_flat = FlatLambdaCDM(H0=70, Om0=0.3)
 
+dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
+'U':0.36,'B':0.44,'V':0.55,'R':0.64,'I':0.79,
+'W1':3.368,'W2':4.618,'W3':12.082,'W4':22.194,
+'j':1.235,'h':1.662,'ks':2.159} 
