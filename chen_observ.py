@@ -70,23 +70,41 @@ def jhk_mag_to_jy(inp, band=None, mujy=None):
     return jhk_jy
 
 
-def sdss_mag_to_jy(inp, band=None, mujy=None):
+def sdss_mag_to_jy(inp, band=None, mujy=None, inv=None):
     #
     # in Jy
-    if band == 'u':
-        fiso_sdss = 3767.266
-    elif band == 'g':
-        fiso_sdss = 3631.
-    elif band == 'r':
-        fiso_sdss = 3631.
-    if band == 'i':
-        fiso_sdss = 3631.
-    if band == 'z':
-        fiso_sdss = 3564.727
-    elif band is None:
-        fiso_sdss = [3767.266, 3631., 3631., 3631., 3564.727]
-    inp = np.array(inp)
-    sdss_jy = 10**(-1*inp/2.5)*fiso_sdss
-    if mujy is True:
-        sdss_jy = 1e6*sdss_jy
-    return sdss_jy
+    if not inv:
+        if band == 'u':
+            fiso_sdss = 3767.266
+        elif band == 'g':
+            fiso_sdss = 3631.
+        elif band == 'r':
+            fiso_sdss = 3631.
+        if band == 'i':
+            fiso_sdss = 3631.
+        if band == 'z':
+            fiso_sdss = 3564.727
+        elif band is None:
+            fiso_sdss = [3767.266, 3631., 3631., 3631., 3564.727]
+        inp = np.asarray(inp)
+        sdss_jy = 10**(-1*inp/2.5)*fiso_sdss
+        if mujy is True:
+            sdss_jy = 1e6*sdss_jy
+        return sdss_jy
+    else:
+        if mujy:inp/=1e6
+        if band == 'u':
+            fiso_sdss = 3767.266
+        elif band == 'g':
+            fiso_sdss = 3631.
+        elif band == 'r':
+            fiso_sdss = 3631.
+        if band == 'i':
+            fiso_sdss = 3631.
+        if band == 'z':
+            fiso_sdss = 3564.727
+        elif band is None:
+            fiso_sdss = [3767.266, 3631., 3631., 3631., 3564.727]
+        inp = np.asarray(inp)
+        sdss_mag = -2.5*np.log10(inp/fiso_sdss)
+        return sdss_mag
