@@ -62,7 +62,7 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
         
     #Using lband, pars and mag_band to calculate mass_band
     lband=get_lum(mags,redshift)
-    print lband
+    #print lband
     mass_band=np.zeros((len(band),len(color_str)),dtype=np.float64)
     for i in range(len(band)):
         for j in range(len(color_str)):
@@ -70,3 +70,29 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
             mass_band[i,j]=lband[i]+pars[0]+0.2+pars[1]*color[j]
     if close:store.close()
     return mass_band
+
+
+def sdss_z09(sdssmags, z=None,color = None, band=None):
+    '''
+    call z09_mstar to calculate the stellar mass
+    using the input sdss magnitudes
+    default: band = 'i', color = 'g-i'
+    '''
+    if color is None:
+        color = 'g-i'
+    if band is None:
+        band = 'i'
+    if z is None:
+        z=0.000000001
+    umag, gmag, rmag, imag, zmag = sdssmags
+    color_str = ['u-g','u-r','u-i','u-z','g-r','g-i','g-z','r-i','r-z']
+    sdsscolor = [umag-gmag, umag-rmag,umag-imag,umag-zmag,gmag-rmag,gmag-imag,gmag-zmag,rmag-imag,rmag-zmag]
+    colors=pd.DataFrame({'bands':color_str,'color':sdsscolor})
+    mags = [gmag, rmag, imag, zmag]
+    bands = ['g','r','i','z']
+    zmstar = z09_mstar(mags,bands,sdsscolor,color_str,z)
+    mstar = pd.DataFrame(zmstar,index=bands,columns=color_str)
+    return mstar.loc[band,color]
+
+
+

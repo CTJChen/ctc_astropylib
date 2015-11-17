@@ -4,7 +4,7 @@ print("usually takes a few seconds")
 
 from chen_observ import *
 from ctc_arrays import *
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 from astropy import units as u
