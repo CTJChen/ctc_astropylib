@@ -8,9 +8,9 @@ from astropy.cosmology import FlatLambdaCDM
 
 
 def wise_mag_to_jy(wise_mag, corr=None, mujy=None):
-    mag_cor = [0.03, 0.04, 0.03, 0.03]
+    mag_cor = np.asarray([0.03, 0.04, 0.03, 0.03])
     wise_jy = np.zeros(4, dtype='float64')
-    fiso_wise = [309.540, 171.787, 31.674, 8.363]  # in Jy
+    fiso_wise = np.asarray([309.540, 171.787, 31.674, 8.363])  # in Jy
     if corr is True:
         wise_mag += mag_cor
     wise_jy = 10**(-wise_mag/2.5)*fiso_wise   # convert to Jy
@@ -62,7 +62,7 @@ def jhk_mag_to_jy(inp, band=None, mujy=None):
     elif band == 'ks':
         fiso_jhk = 666.7
     elif band is None:
-        fiso_jhk = [1594., 1024., 666.7]
+        fiso_jhk = np.asarray([1594., 1024., 666.7])
     inp = np.array(inp)
     jhk_jy = 10**(-1*inp/2.5)*fiso_jhk
     if mujy is True:
@@ -73,6 +73,7 @@ def jhk_mag_to_jy(inp, band=None, mujy=None):
 def sdss_mag_to_jy(inp, band=None, mujy=None, inv=None):
     #
     # in Jy
+    inp = np.asarray(inp)
     if not inv:
         if band == 'u':
             fiso_sdss = 3767.266
@@ -85,14 +86,13 @@ def sdss_mag_to_jy(inp, band=None, mujy=None, inv=None):
         if band == 'z':
             fiso_sdss = 3564.727
         elif band is None:
-            fiso_sdss = [3767.266, 3631., 3631., 3631., 3564.727]
-        inp = np.asarray(inp)
+            fiso_sdss = np.asarray([3767.266, 3631., 3631., 3631., 3564.727])
         sdss_jy = 10**(-1*inp/2.5)*fiso_sdss
         if mujy is True:
             sdss_jy = 1e6*sdss_jy
         return sdss_jy
     else:
-        if mujy:inp/=1e6
+        if mujy:inp=inp/1e6
         if band == 'u':
             fiso_sdss = 3767.266
         elif band == 'g':
@@ -104,7 +104,16 @@ def sdss_mag_to_jy(inp, band=None, mujy=None, inv=None):
         if band == 'z':
             fiso_sdss = 3564.727
         elif band is None:
-            fiso_sdss = [3767.266, 3631., 3631., 3631., 3564.727]
-        inp = np.asarray(inp)
-        sdss_mag = -2.5*np.log10(inp/fiso_sdss)
+            fiso_sdss = np.asarray([3767.266, 3631., 3631., 3631., 3564.727])
+        sdss_mag = np.log10(inp/fiso_sdss)*(-2.5)
         return sdss_mag
+
+'''
+def k_mass(kmag, redshift, distance=None):
+
+    input K-band magnitude, 
+
+    dist = Distance(z=redshift)
+    dist = 10*dist.pc #in 10 parsec
+    dmod = 5*np.log10(dist)-5
+'''
