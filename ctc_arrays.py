@@ -41,6 +41,6 @@ def match_unique(id_cat1,id_cat2,d2d,d3d=None,cols=None):
 		cols.append('dist')		
 	df = pd.DataFrame({cols[0]:id_cat1,cols[1]:id_cat2,cols[2]:dist})
 	grp = df.groupby(cols[0])
-	df_out = grp.apply(lambda t:t[t.dist == t.dist.min()])
+	df_out = grp.apply(lambda t:t[t.dist == t.dist.min()] if sum(t.dist==t.dist.min()) == 1 else t[t[cols[1]] == t[cols[1]].min()])
 	df_out['nmatch'] = grp.count().dist.values
 	return df_out
