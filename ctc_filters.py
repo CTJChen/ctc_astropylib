@@ -99,3 +99,20 @@ def galex_resp(wav, z = None, nowav = False):
 	if nowav: output.drop('wav', axis=1, inplace=True)
 	return output
 
+def akari_resp(wav, z = None, nowav = False):
+	'''
+	Convolve the input wavelengths with the 9 filters of AKARI IRC
+	return : a pandas DF with response curves
+	'''
+	bands=['n2','n3','n4','s7','s9w','s11','l15','l18w','l24']
+	output = pd.DataFrame({'wav':wav})
+	akaripath = home+'/idl/cal/akari/akari_'
+	for i in bands:
+		fname = akaripath+i+'.txt'
+		band = pd.read_csv(fname, comment = '#', sep='  ',\
+			   names = ['wav_micron','resp'])
+		resp = band.resp
+		wav_micron = band.wav_micron
+		output[i] = np.interp(wav, wav_micron, resp)
+	if nowav: output.drop('wav', axis=1, inplace=True)
+	return output

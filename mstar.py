@@ -14,6 +14,7 @@ store=pd.HDFStore(home+'/work_scripts/dwarf/zibetti2009.h5')
 from chen_observ import sdss_mag_to_jy
 from chen_observ import flux_to_nulnu
 from chen_observ import ab_to_jy
+from chen_stat import dmod
 dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 'U':0.36,'B':0.44,'V':0.55,'R':0.64,'I':0.79}
 
@@ -95,4 +96,13 @@ def sdss_z09(sdssmags, z=None,color = None, band=None):
     return mstar.loc[band,color]
 
 
+def mstar_k(kmag,z):
+    '''
+    Use redshift and observed ks-band luminosity to estimate stellar mass
+    '''
+    dm = dmod(z)
+    kmag_abs = kmag-dm
+    lk_sun = (3.28-kmag_abs)/2.5
+    mass_k = np.log10(0.31)+lk_sun
+    return mass_k
 
