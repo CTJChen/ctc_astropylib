@@ -2,6 +2,9 @@ from scipy.optimize import nnls
 import multiprocessing as mp
 from ctc_filters import *
 from ggplot import *
+from astropy.coordinates import Distance
+from astropy import units as u
+
 '''
 Perform non negative least square SED fitting using
 the Assef et al. 2010 templates and extinction laws
@@ -39,7 +42,7 @@ class filter_resp:
     '''
     def __init__(self, instrument = None, wav = None, resp_input = None, all = False):
         self.df = pd.DataFrame()
-        self.bulit_in_inst = ['SDSS','2MASS','WISE','GALEX','BESSELL']
+        self.bulit_in_inst = ['SDSS','2MASS','WISE','GALEX','BESSELL','AKARI-IRC']
         if wav is None: 
             wav = np.hstack((np.linspace(0.03,3.0,500),np.linspace(3.0001,100,500)))
         self.df['wav'] = wav
@@ -61,6 +64,9 @@ class filter_resp:
                 elif i == 'WISE':
                     wise = wise_resp(wav, nowav = True)
                     self.df = pd.concat([self.df,wise], axis=1)
+                elif i == 'AKARI-IRC':
+                    akari = akari_resp(wav, nowav = True)
+                    self.df = pd.concat([self.df,akari], axis=1)
         if instrument:
             for i in instrument:
                 if i not in self.bulit_in_inst:
@@ -113,7 +119,7 @@ def int_over_resp(wav, flux, resp, z=None):
 
 #read in Roberto Assef's low resolution templates 
 #and the extinction law
-def lrt_sed(data,sedtmp = None):
+def lrt_sed(data,sedtmp = None,verbose = False):
     '''
     input:
     data: {'index':object names,'band_name': micro jansky in the band, 'redshift':redshift}
@@ -155,6 +161,7 @@ def lrt_sed(data,sedtmp = None):
                 flux = row[row.notnull()]
                 fluxerr = err.loc[nuid,bands]
                 fluxerr[fluxerr.isnull()]=flux[fluxerr.isnull()] 
+                fluxerr[fluxerr == 0] = 0.001*flux[fluxerr ==0]
                 #if fluxerr = nan, use flux value(assuming 1 sigma UL)
                 resp0 = resp.df.loc[:,bands]
                 coeff = np.zeros((4,len(ext_grid)),dtype=float)
@@ -171,6 +178,7 @@ def lrt_sed(data,sedtmp = None):
                 output.loc[nuid,['c_AGN','c_elip','c_sbc','c_im']] = coeff[:,i_chimin]
                 output.loc[nuid,'ebv'] = ext_grid[i_chimin]
                 output.loc[nuid,'chi_red']=chi[i_chimin]/float(len(bands))
+                if verbose:print(nuid+' has reduced chi square of '+str(output.loc[nuid,'chi_red']))
             else:
                 print nuid+' has no data'
         return output
@@ -229,8 +237,13 @@ class sed_templates:
     def nulnu(self,wav_nu,z=None):
         freq = 3e14/self.df.wav
         self.nulnu = np.zeros(len(self.df.columns[1:]),dtype=float)
+        if z is not None:
+            dist = Distance(z=z).cgs
+        else:
+            dist=10*u.pc.cgs
+        dist = dist.value
         for index, i in enumerate(self.df.columns[1:]):
-            self.nulnu[index] = np.interp(wav_nu,self.df.wav,self.df.loc[:,i])
+            self.nulnu[index] = (1e-29*3e14/wav_nu)*4*np.pi*dist**2*np.interp(wav_nu,self.df.wav,self.df.loc[:,i])
     def rest_mag(self,resp=None,z=None,mujy=None,verbose=True):
         '''
         Set z if wants to derive redshifted magnitude
@@ -247,10 +260,48 @@ class sed_templates:
             #iterate over the columns
             for index, i in enumerate(self.df.columns[1:]):
                 self.mags.loc[i, :] = int_over_resp(self.df.wav,self.df.loc[:,i],resp, z=z).values
+    def plot_sed(self,phot = None, fname = None, ignore = None, err = None):
+        '''
+        make plots using ggplot
+        '''
+        wav = self.df.wav
+        cols = list(self.df.columns[1:])
+        if ignore is not None:
+            for i in ignore:
+                cols.remove(i)
+        df_plot = pd.DataFrame({'log wav(um)':np.log10(wav),'log flux':np.log10(self.df.loc[:,cols[0]]),'template':[cols[0] for x in range(len(wav))]})
+        for i in cols[1:]:
+            df = pd.DataFrame({'log wav(um)':np.log10(wav),'log flux':np.log10(self.df.loc[:,i]),'template':[i for x in range(len(wav))]})
+            df_plot = pd.concat([df_plot,df])
+        if phot is None:
+            plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+geom_line()
+        elif err is None:
+            if type(phot) != pd.Series:
+                print ('phot should be in pandas series')
+            else:
+                df_phot = ({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
+                            'log flux':np.log10(phot.values.astype(float)),
+                            'template':['Data' for x in range(len(phot))]})
+                plt_out=ggplot(df_phot,aes(x='log wav(um)', y='log flux',color='template'))+\
+                        geom_point()+geom_line(df_plot)
+        else:
+            if type(phot) != pd.Series:
+                print ('phot should be in pandas series')
+            else:
+                df_phot = ({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
+                            'log flux':np.log10(phot.values.astype(float)),
+                            'template':['Data' for x in range(len(phot))]})            
+            plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+\
+            geom_line()+geom_point(data = df_phot)
+        #if fname is None:
+        #    fname = 'plot'
+        #ggsave(plt_out,fname+'.pdf')
+        self.sed= plt_out
+
 
 def plot_sed(tmp,phot = None, fname = None, ignore = None, err = None):
     '''
-    make plots
+    make plots using ggplot
     '''
     wav = tmp.df.wav
     cols = list(tmp.df.columns[1:])
@@ -270,10 +321,17 @@ def plot_sed(tmp,phot = None, fname = None, ignore = None, err = None):
             df_phot = ({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
                         'log flux':np.log10(phot.values.astype(float)),
                         'template':['Data' for x in range(len(phot))]})
-            plt_out=ggplot(df_phot,aes(x='log wav(um)', y='log flux',color='template'))+geom_point()+geom_line(df_plot)
+            plt_out=ggplot(df_phot,aes(x='log wav(um)', y='log flux',color='template'))+\
+                    geom_point()+geom_line(df_plot)
     else:
-        plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+geom_line()+geom_point(data = df_phot)
-    return plt_out
+        plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+\
+        geom_line()+geom_point(data = df_phot)
+    #if fname is None:
+    #    fname = 'plot'
+    #ggsave(plt_out,fname+'.pdf')
+    self.sed = plt_out
+
+
 
 
 
