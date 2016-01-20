@@ -16,7 +16,7 @@ def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=None,ver=None):
     ra in degrees, dec in degrees, search_radius in arcmin.
     '''
     def gen_SDSS_sql(ra, dec, search_radius):
-        query_out  = ' p.objID, p.type, p.ra, p.dec, p.u, p.g, p.r, p.i, p.z, p.Err_u, p.Err_g, p.Err_r, p.Err_i, p.Err_z, p.extinction_u, p.extinction_i, p.extinction_r, p.extinction_g, p.extinction_z'
+        query_out  = ' p.objID, p.type, p.ra, p.dec, p.u, p.g, p.r, p.i, p.z, p.Err_u, p.Err_g, p.Err_r, p.Err_i, p.Err_z, p.extinction_u, p.extinction_i, p.extinction_r, p.extinction_g, p.extinction_z, p.petroMag_u, p.petroMag_g, p.petroMag_r, p.petroMag_i, p.petroMag_z, petroMagErr_u, petroMagErr_g, petroMagErr_r, petroMagErr_i, petroMagErr_z'
         query_from = ' FROM fGetNearbyObjEq({ra},{dec},{search_radius}) n, PhotoPrimary p WHERE n.objID=p.objID'.format(ra=str(ra),dec=str(dec),search_radius=str(search_radius))
         query_str='SELECT'+query_out+query_from
         return query_str 
