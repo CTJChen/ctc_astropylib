@@ -10,7 +10,7 @@ import pandas as pd
 from astropy.table import Table as tab
 from astropy import coordinates as coord
 from astropy import units as u
-
+from astropy.io import votable
 def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=None,ver=None):
     '''
     ra in degrees, dec in degrees, search_radius in arcmin.
@@ -79,4 +79,32 @@ def load_SDSS_phot_dr12(ra,dec,search_radius,pandas=None, limit=None):
         tab_out=ascii.read(response, delimiter=',')
     #should fix objID to string
     #should find out what p.type means
+    return tab_out
+
+
+def IRSA_TAP(ra,dec,search_radius,irsa_table,pandas=False,sql_SELECT=None,sql_WHERE=None,verbose=False):
+    '''
+    '''
+    j2000 ="'"+"J2000"+"'"
+    sURL = 'http://irsa.ipac.caltech.edu/TAP/sync?QUERY='
+    str_from = 'FROM+'+irsa_table+'+'
+    if sql_SELECT == None :
+        str_select = 'SELECT+*+' #select all
+    else:
+        str_select = 'SELECT+'+sql_SELECT+'+'
+    if sql_WHERE == None :
+        str_where = 'WHERE+'
+    else:
+        str_where = 'WHERE+'+sql_WHERE+'+'
+    str_coord1 = 'CONTAINS(POINT('+j2000+',ra,dec),'
+    str_coord2 = 'CIRCLE('+j2000+','+str(ra)+','+str(dec)+','+str(search_radius)+'))=1'
+    str_coord=str_coord1+str_coord2
+    urlquery = sURL+str_select+str_from+str_where+str_coord
+    if verbose:
+        print(urlquery)
+    response=urllib2.urlopen(urlquery)
+    if pandas:
+        tab_out = votble.parse_single_table(response).to_pandas()
+    else:
+        tab_out = votable.parse_single_table(response)
     return tab_out
