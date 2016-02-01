@@ -4,6 +4,7 @@ from ctc_filters import *
 from ggplot import *
 from astropy.coordinates import Distance
 from astropy import units as u
+import seaborn as sns
 
 '''
 Perform non negative least square SED fitting using
@@ -15,8 +16,10 @@ dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 'U':0.36,'B':0.44,'V':0.55,'R':0.64,'I':0.79,
 'W1':3.368,'W2':4.618,'W3':12.082,'W4':22.194,
 'j':1.235,'h':1.662,'ks':2.159,
+'J':1.235,'H':1.662,'Ks':2.159,
 'SDSSu':0.3543,'SDSSg':0.4770,'SDSSr':0.6231,'SDSSi':0.7625,'SDSSz':0.9134,
-'2MASSJ':1.235,'2MASSH':1.662,'2MASSKs':2.159} 
+'2MASSJ':1.235,'2MASSH':1.662,'2MASSKs':2.159,
+'galex_fuv':0.1542,'galex_nuv':0.2274,'bess_b':0.44, 'bess_r':0.64,  'bess_i':0.79} 
 
 
 class filter_resp:
@@ -178,9 +181,10 @@ def lrt_sed(data,sedtmp = None,verbose = False):
                 output.loc[nuid,['c_AGN','c_elip','c_sbc','c_im']] = coeff[:,i_chimin]
                 output.loc[nuid,'ebv'] = ext_grid[i_chimin]
                 output.loc[nuid,'chi_red']=chi[i_chimin]/float(len(bands))
-                if verbose:print(nuid+' has reduced chi square of '+str(output.loc[nuid,'chi_red']))
+                if verbose:
+                    print(nuid,' has reduced chi square of ',output.loc[nuid,'chi_red'])
             else:
-                print nuid+' has no data'
+                print(nuid,' has no data')
         return output
     else:
         print('input data should have pandas multiindex')
@@ -200,6 +204,8 @@ class sed_templates:
             self.df = pd.read_fwf(path_tmp+'assef_lrt_templates.dat',colspecs=[(0,16),(22,31),(36,46),(48,61),(63,76),(80,91)],\
                    comment='#',names=['wav','agn','agn2','e','sbc','im'])            
             #normalize each templates to elip at 1 micron
+            #drop AGN2
+            self.df.drop('agn2',axis=1,inplace=True)
             self.df.agn = self.df.agn.values*self.df.loc[152,'e']/self.df.loc[152,'agn']
             self.df.sbc = self.df.sbc.values*self.df.loc[152,'e']/self.df.loc[152,'sbc']
             self.df.im = self.df.im.values*self.df.loc[152,'e']/self.df.loc[152,'im']
@@ -269,34 +275,50 @@ class sed_templates:
         if ignore is not None:
             for i in ignore:
                 cols.remove(i)
-        df_plot = pd.DataFrame({'log wav(um)':np.log10(wav),'log flux':np.log10(self.df.loc[:,cols[0]]),'template':[cols[0] for x in range(len(wav))]})
+        df_plot = pd.DataFrame({'log wav(um)':np.log10(wav),'log flux':np.log10(self.df.loc[:,cols[0]]),
+                                'logf_l':np.log10(self.df.loc[:,cols[0]]),
+                                'logf_h':np.log10(self.df.loc[:,cols[0]]),
+                                'template':[cols[0] for x in range(len(wav))]})
         for i in cols[1:]:
-            df = pd.DataFrame({'log wav(um)':np.log10(wav),'log flux':np.log10(self.df.loc[:,i]),'template':[i for x in range(len(wav))]})
+            df = pd.DataFrame({'log wav(um)':np.log10(wav),'log flux':np.log10(self.df.loc[:,i]),
+                'logf_l':np.log10(self.df.loc[:,i]),
+                'logf_h':np.log10(self.df.loc[:,i]),
+                'template':[i for x in range(len(wav))]})
             df_plot = pd.concat([df_plot,df])
         if phot is None:
             plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+geom_line()
         elif err is None:
+            print('No error bars')
             if type(phot) != pd.Series:
                 print ('phot should be in pandas series')
             else:
-                df_phot = ({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
+                df_phot = pd.DataFrame({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
                             'log flux':np.log10(phot.values.astype(float)),
                             'template':['Data' for x in range(len(phot))]})
+                self.phot = df_phot                
                 plt_out=ggplot(df_phot,aes(x='log wav(um)', y='log flux',color='template'))+\
-                        geom_point()+geom_line(df_plot)
+                        geom_point()+geom_line(df_plot)+\
+                        ylim(min(df_phot['log flux'])-1.5,max(df_phot['log flux'])+0.5)+\
+                        xlim(-0.7,1.5)
+                        #+geom_point(df_phot,size=40,color='red')
         else:
-            if type(phot) != pd.Series:
-                print ('phot should be in pandas series')
+            if type(phot) != pd.Series or type(err) != pd.Series:
+                print ('phot and err should be in pandas series with band names as index')
             else:
-                df_phot = ({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
+                df_phot = pd.DataFrame({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index]).astype(float)),
                             'log flux':np.log10(phot.values.astype(float)),
-                            'template':['Data' for x in range(len(phot))]})            
-            plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+\
-            geom_line()+geom_point(data = df_phot)
+                            'logf_l':np.log10(phot.values.astype(float)-0.95*err.values.astype(float)),
+                            'logf_h':np.log10(phot.values.astype(float)+0.95*err.values.astype(float)),
+                            'template':['Data' for x in range(len(phot))]})
+            plt_out=ggplot(df_phot,aes(x='log wav(um)',y='log flux',ymax='logf_h',ymin='logf_l',color='template'))+\
+            geom_point()+geom_pointrange()+geom_line(df_plot)+\
+            ylim(min(df_phot['log flux'])-1.5,max(df_phot['log flux'])+0.5)+\
+            xlim(-0.7,1.5)
+            self.phot = df_phot
         #if fname is None:
         #    fname = 'plot'
         #ggsave(plt_out,fname+'.pdf')
-        self.sed= plt_out
+        self.sed = plt_out
 
 
 def plot_sed(tmp,phot = None, fname = None, ignore = None, err = None):
