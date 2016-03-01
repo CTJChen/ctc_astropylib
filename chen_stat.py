@@ -20,6 +20,6 @@ def bayes_ci(k, n, sigma=None):
     return np.array([err_lower, err_upper])
 
 def dmod(redshift):
-    dist = Distance(z=redshift).parsec
+    dist = Distance(z=redshift).parsec/10.
     dm=5*np.log10(dist-5)
     return dm
