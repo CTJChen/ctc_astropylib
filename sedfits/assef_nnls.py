@@ -211,7 +211,7 @@ class sed_templates:
             self.df.im = self.df.im.values*self.df.loc[152,'e']/self.df.loc[152,'im']
             self.df['galaxy'] = self.df.im.values+self.df.e.values+self.df.sbc.values
             if verbose:
-                print 'Loading Assef 2010 templates'
+                print('Loading Assef 2010 templates')
             if norm is not None:
                 if verbose:
                     print('norm should be an array with 5 or 6 elements')
@@ -239,7 +239,7 @@ class sed_templates:
             print('tmp should be a dataframe with the first column being wavelengths(micron)')
         else:
             self.df = tmp
-            if self.df[self.df.columns[0]]!='wav':self.df.rename(columns={self.df.columns[0]:'wav'})
+            if self.df.columns[0] != 'wav':self.df.rename(columns={self.df.columns[0]:'wav'})
     def nulnu(self,wav_nu,z=None):
         freq = 3e14/self.df.wav
         self.nulnu = np.zeros(len(self.df.columns[1:]),dtype=float)
@@ -254,7 +254,7 @@ class sed_templates:
         '''
         Set z if wants to derive redshifted magnitude
         '''
-        if verbose:print 'created self.mags'
+        if verbose:print('created self.mags')
         if resp is None:
             resp = filter_resp(wav=self.df.wav,all=True).df
         else: 
@@ -290,7 +290,7 @@ class sed_templates:
         elif err is None:
             print('No error bars')
             if type(phot) != pd.Series:
-                print ('phot should be in pandas series')
+                print('phot should be in pandas series')
             else:
                 df_phot = pd.DataFrame({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
                             'log flux':np.log10(phot.values.astype(float)),
@@ -303,7 +303,7 @@ class sed_templates:
                         #+geom_point(df_phot,size=40,color='red')
         else:
             if type(phot) != pd.Series or type(err) != pd.Series:
-                print ('phot and err should be in pandas series with band names as index')
+                print('phot and err should be in pandas series with band names as index')
             else:
                 df_phot = pd.DataFrame({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index]).astype(float)),
                             'log flux':np.log10(phot.values.astype(float)),
@@ -338,7 +338,7 @@ def plot_sed(tmp,phot = None, fname = None, ignore = None, err = None):
         plt_out=ggplot(df_plot,aes(x='log wav(um)',y='log flux',color='template'))+geom_line()
     elif err is None:
         if type(phot) != pd.Series:
-            print ('phot should be in pandas series')
+            print('phot should be in pandas series')
         else:
             df_phot = ({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
                         'log flux':np.log10(phot.values.astype(float)),

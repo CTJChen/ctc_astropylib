@@ -19,7 +19,11 @@ def bayes_ci(k, n, sigma=None):
     err_upper = dist.beta.ppf(1-(1-c)/2., k+1, n-k+1) - k/n
     return np.array([err_lower, err_upper])
 
-def dmod(redshift):
-    dist = Distance(z=redshift).parsec/10.
+
+def dmod(redshift,distance=None):
+    if distance is not None:
+        dist = distance.to(parsec).value/10.
+    else:
+        dist = Distance(z=redshift).parsec/10.
     dm=5*np.log10(dist-5)
     return dm
