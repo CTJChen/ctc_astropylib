@@ -135,12 +135,14 @@ def behrhug(df_input,verbose=False,invertBR=False):
         df_out.loc[index,['logBR','logBR_LB','logBR_UB']] = df.loc[2,['Median','LowerB','UpperB']].values.astype(float)
     return df_out
 
-def xmm_bkgd(filename,df=False,fit=False):
+def xmm_bkgd(filename,df=False,fit=False,sig=None):
     '''
     The input file should be the output of the step 1 in: 
     http://www.cosmos.esa.int/web/xmm-newton/sas-thread-epic-filterbackground
     which bins the photons in 100s time intervals
     '''
+    if sig is None:
+        sig = 3
     inp = fits.getdata(filename)
     inp = tab(inp).to_pandas()
     #Fit a gaussian model to the rate distribution
@@ -151,7 +153,25 @@ def xmm_bkgd(filename,df=False,fit=False):
     elif fit is True:
         return r
     else:
-        return r.means_[0, 0]+3*np.sqrt(r.covars_[0, 0])
+        return r.means_[0, 0]+sig*np.sqrt(r.covars_[0, 0])
 
+def nherr(nh,nhlerr,nhuerr,unit=None,output=False):
+    '''
+    convert XSPEC NH output (in unit of 10^22 unless specified)
+    intou log NH and uncertainties in log
+    '''
+    if unit is None:
+        unit = 22
+    lnh = np.log10(nh*10**unit)
+    if nhlerr <= nh:
+        lnhlerr = np.nan    
+    else:
+        lnhlerr = lnh-np.log10((nh+nhlerr)*10**unit)
+    lnhuerr = np.log10((nh+nhuerr)*10**unit)-lnh
+    print('NH='+str(np.round(lnh,decimals=2))+'+'+str(np.round(lnhuerr,decimals=2))+'-'+str(np.round(lnhlerr,decimals=2)))
+    if output:
+        return [lnh,lnhlerr,lnhuerr]
+    else:
+        return
 
 
