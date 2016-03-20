@@ -3,7 +3,7 @@ from astropy.coordinates.distances import Distance
 from astropy import units as u
 import scipy.constants as c
 from astropy.cosmology import FlatLambdaCDM
-
+import astropy.coordinates as cd
 # takes in wise(AB) and converts to Jy or microJy
 
 
@@ -115,6 +115,14 @@ def dmod(redshift,dist=True):
         dist_10pc = Distance(z=redshift).parsec/10.
     dm=5*np.log10(dist_10pc-5)
     return dm
+
+
+def makecd(ra,dec,radec=None):
+    if radec is not None:
+        return cd.SkyCoord(radec)
+    else:
+        return cd.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+
 '''
 def k_mass(kmag, redshift, distance=None):
 
