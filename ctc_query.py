@@ -45,9 +45,15 @@ def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=True,ver=None,columns=None):
         print('No objects have been found for RA='+str(ra)+', DEC='+str(dec)+' within '+str(search_radius)+' arcmin')
         return out
     elif not pandas:
+        radec=coord.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+        sdss=coord.SkyCoord(out.ra, out.dec, unit=(u.degree,u.degree))    
+        out['dist_arcsec'] = radec.separation(sdss).arcsec
         out = tab.from_pandas(out)
         return out
     else:
+        radec=coord.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+        sdss=coord.SkyCoord(out.ra, out.dec, unit=(u.degree,u.degree))    
+        out['dist_arcsec'] = radec.separation(sdss).arcsec        
         return out
 
 
@@ -79,9 +85,15 @@ def load_SDSS_phot_dr12(ra,dec,search_radius,pandas=True,ver=None,columns=None):
         print('No objects have been found for RA='+str(ra)+', DEC='+str(dec)+' within '+str(search_radius)+' arcmin')
         return out
     elif not pandas:
+        radec=coord.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+        sdss=coord.SkyCoord(out.ra, out.dec, unit=(u.degree,u.degree))    
+        out['dist_arcsec'] = radec.separation(sdss).arcsec        
         out = tab.from_pandas(out)
         return out
     else:
+        radec=coord.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+        sdss=coord.SkyCoord(out.ra, out.dec, unit=(u.degree,u.degree))    
+        out['dist_arcsec'] = radec.separation(sdss).arcsec        
         return out
 
 
