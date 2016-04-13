@@ -353,13 +353,3 @@ def plot_sed(tmp,phot = None, fname = None, ignore = None, err = None):
     #ggsave(plt_out,fname+'.pdf')
     self.sed = plt_out
 
-
-
-
-
-
-
-
-
-
-
