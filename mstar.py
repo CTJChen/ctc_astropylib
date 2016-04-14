@@ -17,6 +17,7 @@ from chen_observ import ab_to_jy
 from chen_stat import dmod
 dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 'U':0.36,'B':0.44,'V':0.55,'R':0.64,'I':0.79}
+mabs_sun = {'u':6.41, 'g':5.15, 'r':4.67, 'i':4.56, 'z':4.53}
 
 def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     '''
@@ -30,9 +31,11 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     4. redshift : 
     set ld if luminosity distance is passed instaed of redshift
     '''
-    wav=np.zeros(len(band),dtype=np.float64)
+    wav=np.zeros(len(band),dtype=float)
+    mag_dmod = dmod(redshift)
     for i in range(len(band)):
         wav[i]=dict_wav[band[i]]
+        lband = (mabs_sun[band[i]] - (mags[i]-mag_dmod))/2.5
     def get_z09pars(band,color_str,ubv=None):
         if not ubv:
             z09=store['z09_sdss']
@@ -41,29 +44,6 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
             z09=store['z09_ubv']
             pars=z09.loc[color_str,band].values
         return pars
-    
-    def get_lum(mag,redshift,ubv=ubv,ld=ld):
-        #calculate fluxes in jansky
-        flux=[]
-        if not ubv:
-            if len(band)==5:
-                flux=sdss_mag_to_jy(mag)
-            else:
-                for i in range(len(band)):
-                    flux.append(sdss_mag_to_jy(mag[i],band=band[i]))
-        else:
-            for i in range(len(band)):
-                flux.append(ab_to_jy(mag[i],band=band[i]))
-        #now calculate luminosity distances using z and flux
-        flux=np.asarray(flux)
-        lband=[]
-        lband=flux_to_nulnu(flux,redshift,wav,lsun=True,cosmo=cosmo,ld=ld)
-        #in log lsun unit
-        return lband
-        
-    #Using lband, pars and mag_band to calculate mass_band
-    lband=get_lum(mags,redshift)
-    #print lband
     mass_band=np.zeros((len(band),len(color_str)),dtype=np.float64)
     for i in range(len(band)):
         for j in range(len(color_str)):
