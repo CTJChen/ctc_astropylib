@@ -96,6 +96,19 @@ def sdss_z09(sdssmags, z=None,color = None, band=None):
     return mstar.loc[band,color]
 
 
+def sdss_z09_izi(abs_i,col_gi):
+    '''
+    calculate the stellar mass using i-band and g-i
+    and solar abs. magnitude 4.56
+    input : rest-frame g-i and rest-frame i-band abs mag
+    log M = 1.032(col_gi) - 0.963 + log L
+    '''
+    abs_i_sun = 4.56
+    loglsun = (abs_i_sun-abs_i)/2.5
+    mstar = 1.032*col_gi-0.963+loglsun
+    return mstar
+
+
 def mstar_k(kmag,z):
     '''
     Use redshift and observed ks-band luminosity to estimate stellar mass
