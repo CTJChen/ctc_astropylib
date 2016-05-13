@@ -19,7 +19,7 @@ dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 'J':1.235,'H':1.662,'Ks':2.159,
 'SDSSu':0.3543,'SDSSg':0.4770,'SDSSr':0.6231,'SDSSi':0.7625,'SDSSz':0.9134,
 '2MASSJ':1.235,'2MASSH':1.662,'2MASSKs':2.159,
-'galex_fuv':0.1542,'galex_nuv':0.2274,'bess_b':0.44, 'bess_r':0.64,  'bess_i':0.79} 
+'galex_fuv':0.1542,'galex_nuv':0.2274,'bess_b':0.44, 'bess_r':0.64,  'bess_i':0.79}
 
 
 class filter_resp:
@@ -46,7 +46,7 @@ class filter_resp:
     def __init__(self, instrument = None, wav = None, resp_input = None, all = False):
         self.df = pd.DataFrame()
         self.bulit_in_inst = ['SDSS','2MASS','WISE','GALEX','BESSELL','AKARI-IRC']
-        if wav is None: 
+        if wav is None:
             wav = np.hstack((np.linspace(0.03,3.0,500),np.linspace(3.0001,100,500)))
         self.df['wav'] = wav
         if all:#read in response functions
@@ -63,7 +63,7 @@ class filter_resp:
                     self.df = pd.concat([self.df,bess], axis=1)
                 elif i == '2MASS':
                     nir_2mass = nir_2mass_resp(wav, nowav = True)
-                    self.df = pd.concat([self.df,nir_2mass], axis=1)                              
+                    self.df = pd.concat([self.df,nir_2mass], axis=1)
                 elif i == 'WISE':
                     wise = wise_resp(wav, nowav = True)
                     self.df = pd.concat([self.df,wise], axis=1)
@@ -80,7 +80,7 @@ class filter_resp:
                         self.df = pd.concat([self.df,sdss], axis=1)
                     elif i == '2MASS':
                         nir_2mass = nir_2mass_resp(wav, nowav = True)
-                        self.df = pd.concat([self.df,nir_2mass], axis=1)                        
+                        self.df = pd.concat([self.df,nir_2mass], axis=1)
                     elif i == 'WISE':
                         wise = wise_resp(wav, nowav = True)
                         self.df = pd.concat([self.df,wise], axis=1)
@@ -88,6 +88,10 @@ class filter_resp:
         self.df[self.df<1e-4] = 0.
 
 def ext_smc_mky(wav,ebv):
+    '''
+    The Assef et al. 2010 extinction curve, which combines SMC and Milky Way
+    for AGNs
+    '''
     path_tmp = home+'/lib/sedtemplates/'
     ext = pd.read_csv(path_tmp+'assef_kappa.raw.dat',sep=' ',names=['wav','kappa'])
     kappa = np.interp(wav,ext.wav,ext.kappa)
@@ -100,8 +104,10 @@ def ext_smc_mky(wav,ebv):
 def int_over_resp(wav, flux, resp, z=None):
     '''
     wav, flux for the input templates
-    resp could either be a pandas structure or
-    a 1d array
+    resp could either be a pandas DF or
+    a 1d array.
+    If resp is a pandas DF, an array of photometry
+    will be returned for each filter.
     '''
     if z is not None:
         wav = wav*(1+z)
@@ -120,16 +126,18 @@ def int_over_resp(wav, flux, resp, z=None):
         return int_flux/norm
 
 
-#read in Roberto Assef's low resolution templates 
+#read in Roberto Assef's low resolution templates
 #and the extinction law
 def lrt_sed(data,sedtmp = None,verbose = False):
     '''
     input:
-    data: {'index':object names,'band_name': micro jansky in the band, 'redshift':redshift}
+    data: {'index':object names,'band_name': flux in micro jansky in the band,
+    'redshift':redshift}
     sedtmp: should be a sed_templates object
-    1. get some templates
-    2. convolve it with the response curves (redshifted),
+    1. takes in templates
+    2. convolve them with the response curves (redshifted),
     3. get only the photometry of the observed filters
+    (where fluxes under 'band_name' is not nan)
     3. x = np.vstack(model1, model2, model3 ...).transpose()
     4. y = [observed photometry]
     5. a, chi = nnls(x,y) #non lineasr least square minimization
@@ -146,7 +154,7 @@ def lrt_sed(data,sedtmp = None,verbose = False):
             a10.sbc = a10.sbc.values*a10.loc[152,'e']/a10.loc[152,'sbc']
             a10.im = a10.im.values*a10.loc[152,'e']/a10.loc[152,'im']
         else:
-            a10=sedtmp    
+            a10=sedtmp
         ext_grid = np.hstack((np.linspace(0,0.1,11),np.linspace(0.15,1.,18),np.linspace(2.,10.,9)))
         resp = filter_resp(wav=a10.wav,all=True)
         #iterate data
@@ -163,7 +171,7 @@ def lrt_sed(data,sedtmp = None,verbose = False):
                 bands = row[row.notnull()].index
                 flux = row[row.notnull()]
                 fluxerr = err.loc[nuid,bands]
-                fluxerr[fluxerr.isnull()]=flux[fluxerr.isnull()] 
+                fluxerr[fluxerr.isnull()]=flux[fluxerr.isnull()]
                 fluxerr[fluxerr == 0] = 0.001*flux[fluxerr ==0]
                 #if fluxerr = nan, use flux value(assuming 1 sigma UL)
                 resp0 = resp.df.loc[:,bands]
@@ -171,7 +179,7 @@ def lrt_sed(data,sedtmp = None,verbose = False):
                 chi = np.zeros(len(ext_grid),dtype=float)
                 elip = int_over_resp(wav, e_tmp,resp0,z=z)/fluxerr.values
                 sbc = int_over_resp(wav,sbc_tmp,resp0,z=z)/fluxerr.values
-                im = int_over_resp(wav,im_tmp,resp0,z=z)/fluxerr.values   
+                im = int_over_resp(wav,im_tmp,resp0,z=z)/fluxerr.values
                 for id2, ext in enumerate(ext_grid):
                     agn_tmp = a10.agn*ext_smc_mky(wav,ext)
                     agn = int_over_resp(wav, agn_tmp,resp0,z=z)/fluxerr.values
@@ -193,7 +201,7 @@ def lrt_sed(data,sedtmp = None,verbose = False):
 
 class sed_templates:
     '''
-    Load known templates (Assef+2010), 
+    Load known templates (Assef+2010),
     or takes an input pandas DF
     with the first column being wavelengths.
     Could also set normalization `norm'
@@ -202,7 +210,7 @@ class sed_templates:
         if tmp is None:
             path_tmp = home+'/lib/sedtemplates/'
             self.df = pd.read_fwf(path_tmp+'assef_lrt_templates.dat',colspecs=[(0,16),(22,31),(36,46),(48,61),(63,76),(80,91)],\
-                   comment='#',names=['wav','agn','agn2','e','sbc','im'])            
+                   comment='#',names=['wav','agn','agn2','e','sbc','im'])
             #normalize each templates to elip at 1 micron
             #drop AGN2
             self.df.drop('agn2',axis=1,inplace=True)
@@ -221,14 +229,14 @@ class sed_templates:
                     self.df.e = self.df.e.values*norm[2]
                     self.df.sbc = self.df.sbc.values*norm[3]
                     self.df.im = self.df.im.values*norm[4]
-                    self.df['galaxy'] = self.df.im.values+self.df.e.values+self.df.sbc.values                
-                    self.df['bestfit'] = self.df.im.values+self.df.e.values+self.df.sbc.values+self.df.agn.values                    
+                    self.df['galaxy'] = self.df.im.values+self.df.e.values+self.df.sbc.values
+                    self.df['bestfit'] = self.df.im.values+self.df.e.values+self.df.sbc.values+self.df.agn.values
                 if len(norm) == 6:
                     self.df.agn = self.df.agn.values*ext_smc_mky(self.df.wav.values,norm[5])*norm[0]
                     self.df.e = self.df.e.values*norm[2]
                     self.df.sbc = self.df.sbc.values*norm[3]
                     self.df.im = self.df.im.values*norm[4]
-                    self.df['galaxy'] = self.df.im.values+self.df.e.values+self.df.sbc.values                                    
+                    self.df['galaxy'] = self.df.im.values+self.df.e.values+self.df.sbc.values
                     self.df['bestfit'] = self.df.im.values+self.df.e.values+self.df.sbc.values+self.df.agn.values
             else:
                 if verbose:
@@ -257,7 +265,7 @@ class sed_templates:
         if verbose:print('created self.mags')
         if resp is None:
             resp = filter_resp(wav=self.df.wav,all=True).df
-        else: 
+        else:
             if verbose:print('response function should be at the same wavelength array as the templates')
         if mujy is None:
             print('currently only works for mujy = True')
@@ -295,7 +303,7 @@ class sed_templates:
                 df_phot = pd.DataFrame({'log wav(um)':np.log10(np.asarray([dict_wav[x] for x in phot.index])),
                             'log flux':np.log10(phot.values.astype(float)),
                             'template':['Data' for x in range(len(phot))]})
-                self.phot = df_phot                
+                self.phot = df_phot
                 plt_out=ggplot(df_phot,aes(x='log wav(um)', y='log flux',color='template'))+\
                         geom_point()+geom_line(df_plot)+\
                         ylim(min(df_phot['log flux'])-1.5,max(df_phot['log flux'])+0.5)+\
@@ -352,4 +360,3 @@ def plot_sed(tmp,phot = None, fname = None, ignore = None, err = None):
     #    fname = 'plot'
     #ggsave(plt_out,fname+'.pdf')
     self.sed = plt_out
-
