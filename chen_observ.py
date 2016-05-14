@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+Created on 10.2015
+
+@author: Chien-Ting J. Chen
+Miscellaneous python modules for astrophysical studies.
+wise_mag_to_jy : convert a set of WISE magnitude to flux or vice versa
+sdss_mag_to_jy & jhk_mag_to_jy : 
+similar but for SDSS, could specify bands to be converted.
+ab_to_jy : assuming input/output are AB magnitudes
+
+dmod : distance modulous
+magerr_to_ferr : calculate the uncertainty in magnitude in the flux space
+flux_to_nulnu : given flux, z and wavelength calculate nuLnu.
+"""
+
 import numpy as np
 from astropy.coordinates.distances import Distance
 from astropy import units as u
