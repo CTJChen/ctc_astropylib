@@ -123,7 +123,7 @@ def sdss_mag_to_jy(inp, band=None, mujy=None, inv=None):
         sdss_mag = np.log10(inp/fiso_sdss)*(-2.5)
         return sdss_mag
 
-def dmod(redshift,dist=True):
+def dmod(redshift,dist=False):
     if dist:
         dist_10pc = redshift.to(u.parsec).value/10.
     else:
