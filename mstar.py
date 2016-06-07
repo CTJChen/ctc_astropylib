@@ -19,7 +19,7 @@ dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 'U':0.36,'B':0.44,'V':0.55,'R':0.64,'I':0.79}
 mabs_sun = {'u':6.41, 'g':5.15, 'r':4.67, 'i':4.56, 'z':4.53}
 
-def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=True):
+def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     '''
     Use the Zibetti 2009 table B1 values
     to estimate stellar mass quickly
@@ -53,7 +53,7 @@ def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=Tru
     if close:store.close()
     return mass_band
 
-def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=True):
+def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     '''
     Use the Zibetti 2009 table B1 values
     to estimate stellar mass quickly
