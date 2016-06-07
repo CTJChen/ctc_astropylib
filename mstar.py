@@ -19,7 +19,7 @@ dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 'U':0.36,'B':0.44,'V':0.55,'R':0.64,'I':0.79}
 mabs_sun = {'u':6.41, 'g':5.15, 'r':4.67, 'i':4.56, 'z':4.53}
 
-def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
+def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=True):
     '''
     Use the Zibetti 2009 table B1 values
     to estimate stellar mass quickly
@@ -49,15 +49,11 @@ def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=Non
     for i in range(len(band)):
         for j in range(len(color_str)):
             pars=get_z09pars(band[i],color_str[j],ubv=ubv)
-<<<<<<< HEAD
-            mass_band[i,j]=lband[i]+pars[0]+0.2+pars[1]*color[j]
-=======
             mass_band[i,j]=lband[i]+pars[0]+pars[1]*color[j]
->>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
     if close:store.close()
     return mass_band
 
-def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
+def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=True):
     '''
     Use the Zibetti 2009 table B1 values
     to estimate stellar mass quickly
@@ -107,11 +103,7 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     for i in range(len(band)):
         for j in range(len(color_str)):
             pars=get_z09pars(band[i],color_str[j],ubv=ubv)
-<<<<<<< HEAD
-            mass_band[i,j]=lband[i]+pars[0]+0.2+pars[1]*color[j]
-=======
             mass_band[i,j]=lband[i]+pars[0]+pars[1]*color[j]
->>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
     if close:store.close()
     return mass_band
     

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # -*- coding: utf-8 -*-
 """
 Created on 10.2015
@@ -14,8 +12,6 @@ magerr_to_ferr : calculate the uncertainty in magnitude in the flux space
 flux_to_nulnu : given flux, z and wavelength calculate nuLnu.
 makecd : abbreviated version of cd.SkyCoord(ra,dec, unit=(u.degree,u.degree))
 """
-
->>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
 import numpy as np
 from astropy.coordinates.distances import Distance
 from astropy import units as u
@@ -140,17 +136,3 @@ def makecd(ra,dec,radec=None):
         return cd.SkyCoord(radec)
     else:
         return cd.SkyCoord(ra,dec,unit=(u.degree,u.degree))
-
-'''
-def k_mass(kmag, redshift, distance=None):
-
-    input K-band magnitude, 
-
-    dist = Distance(z=redshift)
-    dist = 10*dist.pc #in 10 parsec
-    dmod = 5*np.log10(dist)-5
-<<<<<<< HEAD
-'''
-=======
-'''
->>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
