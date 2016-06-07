@@ -1,23 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on 10.2015
-@author: Chien-Ting J. Chen
-Miscellaneous python modules for astrophysical studies.
-wise_mag_to_jy : convert a set of WISE magnitude to flux or vice versa
-sdss_mag_to_jy & jhk_mag_to_jy : 
-similar but for SDSS, could specify bands to be converted.
-ab_to_jy : assuming input/output are AB magnitudes
-dmod : distance modulous
-magerr_to_ferr : calculate the uncertainty in magnitude in the flux space
-flux_to_nulnu : given flux, z and wavelength calculate nuLnu.
-makecd : abbreviated version of cd.SkyCoord(ra,dec, unit=(u.degree,u.degree))
-"""
 import numpy as np
 from astropy.coordinates.distances import Distance
 from astropy import units as u
 import scipy.constants as c
 from astropy.cosmology import FlatLambdaCDM
-import astropy.coordinates as cd
+
 # takes in wise(AB) and converts to Jy or microJy
 
 
@@ -122,17 +108,19 @@ def sdss_mag_to_jy(inp, band=None, mujy=None, inv=None):
         sdss_mag = np.log10(inp/fiso_sdss)*(-2.5)
         return sdss_mag
 
-def dmod(redshift,dist=False):
-    if dist:
-        dist_10pc = redshift.to(u.parsec).value/10.
+def dmod(redshift,distance=None):
+    if distance is not None:
+        dist = distance.to(parsec).value/10.
     else:
-        dist_10pc = Distance(z=redshift).parsec/10.
-    dm=5*np.log10(dist_10pc-5)
+        dist = Distance(z=redshift).parsec/10.
+    dm=5*np.log10(dist-5)
     return dm
+'''
+def k_mass(kmag, redshift, distance=None):
 
+    input K-band magnitude, 
 
-def makecd(ra,dec,radec=None):
-    if radec is not None:
-        return cd.SkyCoord(radec)
-    else:
-        return cd.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+    dist = Distance(z=redshift)
+    dist = 10*dist.pc #in 10 parsec
+    dmod = 5*np.log10(dist)-5
+'''

@@ -138,10 +138,10 @@ def lrt_sed(data,sedtmp = None,verbose = False):
     2. convolve them with the response curves (redshifted),
     3. get only the photometry of the observed filters
     (where fluxes under 'band_name' is not nan)
-    3. x = np.vstack(model1, model2, model3 ...).transpose()
-    4. y = [observed photometry]
-    5. a, chi = nnls(x,y) #non lineasr least square minimization
-    6. Create a grid of AGN SED with different extinction
+    4. x = np.vstack(model1, model2, model3 ...).transpose()
+    5. y = [observed photometry]
+    6. a, chi = nnls(x,y) #non lineasr least square minimization
+    7. Create a grid of AGN SED with different extinction
     '''
     if type(data.columns) is pd.core.index.MultiIndex:
         output = pd.DataFrame(index = data.index, columns = ['c_AGN','c_elip','c_sbc','c_im','ebv','chi_red'])
