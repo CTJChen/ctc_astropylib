@@ -3,7 +3,11 @@ import pandas as pd
 from scipy.interpolate import InterpolatedUnivariateSpline as interpol
 from scipy.integrate import trapz as tsum
 import numpy as np
+<<<<<<< HEAD
 from chen_stat import bayes_ci
+=======
+from ctc_stat import bayes_ci
+>>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
 import sys
 from astropy.io import fits
 from astropy.table import Table as tab

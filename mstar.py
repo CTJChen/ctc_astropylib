@@ -49,7 +49,11 @@ def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=Non
     for i in range(len(band)):
         for j in range(len(color_str)):
             pars=get_z09pars(band[i],color_str[j],ubv=ubv)
+<<<<<<< HEAD
             mass_band[i,j]=lband[i]+pars[0]+0.2+pars[1]*color[j]
+=======
+            mass_band[i,j]=lband[i]+pars[0]+pars[1]*color[j]
+>>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
     if close:store.close()
     return mass_band
 
@@ -103,7 +107,11 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     for i in range(len(band)):
         for j in range(len(color_str)):
             pars=get_z09pars(band[i],color_str[j],ubv=ubv)
+<<<<<<< HEAD
             mass_band[i,j]=lband[i]+pars[0]+0.2+pars[1]*color[j]
+=======
+            mass_band[i,j]=lband[i]+pars[0]+pars[1]*color[j]
+>>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
     if close:store.close()
     return mass_band
     

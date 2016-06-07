@@ -1,3 +1,21 @@
+<<<<<<< HEAD
+=======
+# -*- coding: utf-8 -*-
+"""
+Created on 10.2015
+@author: Chien-Ting J. Chen
+Miscellaneous python modules for astrophysical studies.
+wise_mag_to_jy : convert a set of WISE magnitude to flux or vice versa
+sdss_mag_to_jy & jhk_mag_to_jy : 
+similar but for SDSS, could specify bands to be converted.
+ab_to_jy : assuming input/output are AB magnitudes
+dmod : distance modulous
+magerr_to_ferr : calculate the uncertainty in magnitude in the flux space
+flux_to_nulnu : given flux, z and wavelength calculate nuLnu.
+makecd : abbreviated version of cd.SkyCoord(ra,dec, unit=(u.degree,u.degree))
+"""
+
+>>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
 import numpy as np
 from astropy.coordinates.distances import Distance
 from astropy import units as u
@@ -131,4 +149,8 @@ def k_mass(kmag, redshift, distance=None):
     dist = Distance(z=redshift)
     dist = 10*dist.pc #in 10 parsec
     dmod = 5*np.log10(dist)-5
+<<<<<<< HEAD
 '''
+=======
+'''
+>>>>>>> e619adfd1af3928ffb919f91d800aa6210001516
