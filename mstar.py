@@ -18,7 +18,8 @@ dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 mabs_sun = {'u':6.41, 'g':5.15, 'r':4.67, 'i':4.56, 'z':4.53}
 
 storez09=pd.HDFStore(home+'/work_scripts/dwarf/zibetti2009.h5')    
-store=pd.HDFStore(home+'/work_scripts/data_prepare_misc/mtar_b03z09.h5')    
+#store=pd.HDFStore(home+'/work_scripts/data_prepare_misc/mtar_b03z09.h5')    
+store=storez09
 
 def z09_mstar_lsun(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     '''
@@ -109,7 +110,7 @@ def z09_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None):
     return mass_band
 
 
-def mtl_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None, method='z09'):
+def mtl_mstar(mags,band,color,color_str,redshift,ld=None,close=None, method='z09'):
     '''
     Use the Zibetti 2009 table B1 values
     or Bell 2003, default is z09
@@ -122,18 +123,14 @@ def mtl_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None, me
     4. redshift : 
     set ld if luminosity distance is passed instaed of redshift
     '''
-    def get_lum(mag,redshift,ubv=ubv,ld=ld):
+    def get_lum(mag,redshift,ld=ld):
         #calculate fluxes in jansky
         flux=[]
-        if not ubv:
-            if len(band)==5:
-                flux=sdss_mag_to_jy(mag)
-            else:
-                for i in range(len(band)):
-                    flux.append(sdss_mag_to_jy(mag[i],band=band[i]))
+        if len(band)==5:
+            flux=sdss_mag_to_jy(mag)
         else:
             for i in range(len(band)):
-                flux.append(ab_to_jy(mag[i],band=band[i]))
+                flux.append(sdss_mag_to_jy(mag[i],band=band[i]))
         #now calculate luminosity distances using z and flux
         flux=np.asarray(flux)
         lband=[]
@@ -141,30 +138,30 @@ def mtl_mstar(mags,band,color,color_str,redshift,ubv=None,ld=None,close=None, me
         #in log lsun unit
         return lband
 
-    wav=np.zeros(len(band),dtype=np.float64)
-    for i in range(len(band)):
-        wav[i]=dict_wav[band[i]]        
-    def get_pars(band,color_str,bri=False):
+    def get_pars(band,color_str):
         if method is 'z09':
             mtl_sdss=store['z09_sdss']
-            mtl_bri=store['z09_bri']
+            #mtl_bri=store['z09_bri']
         elif method is 'b03':
             mtl_bri=store['b03_bri']
             mtl_sdss = store['b03_sdss']
-        if bri:
-            pars=mtl_bri.loc[color_str,band].values
+        #if ubv is True:
+        #    pars=mtl_bri.loc[color_str,band].values
         else:
-            pars=mtl_sdss.loc[color_str,band].values
-        return pars
-    
-        
+            print('method could only be z09 or b03')
+        pars = mtl_sdss.loc[color_str,band].values
+        return pars    
+
+    wav=np.zeros(len(band),dtype=np.float64)
+    for i in range(len(band)):
+        wav[i]=dict_wav[band[i]]                
     #Using lband, pars and mag_band to calculate mass_band
     lband=get_lum(mags,redshift)
     #print lband
     mass_band=np.zeros((len(band),len(color_str)),dtype=np.float64)
     for i in range(len(band)):
         for j in range(len(color_str)):
-            pars=get_pars(band[i],color_str[j],ubv=ubv)
+            pars = get_pars(band[i],color_str[j])
             mass_band[i,j]=lband[i]+pars[0]+pars[1]*color[j]
     if close:store.close()
     return mass_band
