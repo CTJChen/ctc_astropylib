@@ -4,7 +4,7 @@ Created on 10.2015
 @author: Chien-Ting J. Chen
 Miscellaneous python modules for astrophysical studies.
 wise_mag_to_jy : convert a set of WISE magnitude to flux or vice versa
-sdss_mag_to_jy & jhk_mag_to_jy : 
+sdss_mag_to_jy & jhk_mag_to_jy :
 similar but for SDSS, could specify bands to be converted.
 ab_to_jy : assuming input/output are AB magnitudes
 dmod : distance modulous
@@ -21,16 +21,30 @@ import astropy.coordinates as cd
 # takes in wise(AB) and converts to Jy or microJy
 
 
-def wise_mag_to_jy(wise_mag, corr=None, mujy=None):
+def wise_mag_to_jy(wise_mag, corr=None, mujy=None, tomag=None):
     mag_cor = np.asarray([0.03, 0.04, 0.03, 0.03])
     wise_jy = np.zeros(4, dtype='float64')
     fiso_wise = np.asarray([309.540, 171.787, 31.674, 8.363])  # in Jy
     if corr is True:
         wise_mag += mag_cor
-    wise_jy = 10**(-wise_mag/2.5)*fiso_wise   # convert to Jy
-    if mujy is True:
-        wise_jy = 1e6*wise_jy
-    return wise_jy
+    if tomag is None:
+        wise_jy = 10**(-wise_mag/2.5)*fiso_wise   # convert to Jy
+        if mujy is True:
+            wise_jy = 1e6*wise_jy
+        return wise_jy
+    else if tomag is True:
+        if mujy is True:
+            wise_mag = wise_mag/1e6
+        wise_jy = -2.5*np.log10(wise_mag/fiso_wise)
+        return wise_jy
+
+
+    if keyword_set(corr) then print,'cannot use /corr and /inv at the same time'
+    if keyword_set(mujy) then wise_input=wise_input/1e6
+    wise_mag=dblarr(4)
+    wise_mag=-2.5*alog10(wise_input/fiso_wise)
+    return,wise_mag
+
 
 
 # convert a flux to nulnu at a certain wavelength in the unit of erg/s
