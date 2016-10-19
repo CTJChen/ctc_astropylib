@@ -39,14 +39,6 @@ def wise_mag_to_jy(wise_mag, corr=None, mujy=None, tomag=None):
         return wise_jy
 
 
-    if keyword_set(corr) then print,'cannot use /corr and /inv at the same time'
-    if keyword_set(mujy) then wise_input=wise_input/1e6
-    wise_mag=dblarr(4)
-    wise_mag=-2.5*alog10(wise_input/fiso_wise)
-    return,wise_mag
-
-
-
 # convert a flux to nulnu at a certain wavelength in the unit of erg/s
 # wav should be in micron, and flux should be in Jy
 def flux_to_nulnu(flux, z, wav, ld=None, lsun=None, cosmo=None,mujy=None):
