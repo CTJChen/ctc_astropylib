@@ -32,7 +32,7 @@ def wise_mag_to_jy(wise_mag, corr=None, mujy=None, tomag=None):
         if mujy is True:
             wise_jy = 1e6*wise_jy
         return wise_jy
-    else if tomag is True:
+    elif tomag is True:
         if mujy is True:
             wise_mag = wise_mag/1e6
         wise_jy = -2.5*np.log10(wise_mag/fiso_wise)

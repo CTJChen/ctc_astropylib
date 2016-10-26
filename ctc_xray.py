@@ -151,7 +151,7 @@ def behrhug(df_input, verbose=False, invertBR=False):
 
 def xmm_bkgd(filename, df=False, fit=False, sig=None):
     '''
-    The input file should be the output of the step 1 in: 
+    The input file should be the output of the step 1 in:
     http://www.cosmos.esa.int/web/xmm-newton/sas-thread-epic-filterbackground
     which bins the photons in 100s time intervals
     '''
@@ -168,6 +168,16 @@ def xmm_bkgd(filename, df=False, fit=False, sig=None):
         return r
     else:
         return r.means_[0, 0] + sig * np.sqrt(r.covars_[0, 0])
+
+def xmm_gti(filename, df=False):
+    '''
+    Read GTI fits file and return the total GTI time in ks.
+    '''
+    inp = tab(fits.getdata(filename)).to_pandas()
+    gti = 0.
+    for index, row in inp.iterrows():
+        gti = gti + row.STOP-row.START
+    return gti/1000.
 
 
 def nherr(nh, nhuerr, nhlerr, unit=None, output=False):
