@@ -160,13 +160,15 @@ def xmm_bkgd(filename, df=False, fit=False, sig=None):
     inp = fits.getdata(filename)
     inp = tab(inp).to_pandas()
     # Fit a gaussian model to the rate distribution
-    gmm = sklearn.mixture.GMM()
-    r = gmm.fit(inp.RATE.values[:, np.newaxis])
     if df is True:
         return inp
     elif fit is True:
+        gmm = sklearn.mixture.GMM()
+        r = gmm.fit(inp.RATE.values[:, np.newaxis])
         return r
     else:
+        gmm = sklearn.mixture.GMM()
+        r = gmm.fit(inp.RATE.values[:, np.newaxis])
         return r.means_[0, 0] + sig * np.sqrt(r.covars_[0, 0])
 
 def xmm_gti(filename, df=False):
