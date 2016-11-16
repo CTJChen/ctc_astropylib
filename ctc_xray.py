@@ -163,11 +163,11 @@ def xmm_bkgd(filename, df=False, fit=False, sig=None):
     if df is True:
         return inp
     elif fit is True:
-        gmm = sklearn.mixture.GMM()
+        gmm = sklearn.mixture.GaussianMixture(n_components=1)
         r = gmm.fit(inp.RATE.values[:, np.newaxis])
         return r
     else:
-        gmm = sklearn.mixture.GMM()
+        gmm = sklearn.mixture.GaussianMixture(n_components=1)
         r = gmm.fit(inp.RATE.values[:, np.newaxis])
         return r.means_[0, 0] + sig * np.sqrt(r.covars_[0, 0])
 
