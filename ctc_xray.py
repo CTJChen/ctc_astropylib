@@ -7,7 +7,7 @@ from ctc_stat import bayes_ci
 import sys
 from astropy.io import fits
 from astropy.table import Table as tab
-import sklearn.mixture
+from scipy.stats import norm
 if sys.version_info[0] < 3:
     from StringIO import StringIO
 else:
@@ -163,13 +163,13 @@ def xmm_bkgd(filename, df=False, fit=False, sig=None):
     if df is True:
         return inp
     elif fit is True:
-        gmm = sklearn.mixture.GaussianMixture(n_components=1)
-        r = gmm.fit(inp.RATE.values[:, np.newaxis])
+        mu,std = norm.fit(inp.RATE.values)
+        r = [mu,std]
         return r
     else:
-        gmm = sklearn.mixture.GaussianMixture(n_components=1)
-        r = gmm.fit(inp.RATE.values[:, np.newaxis])
-        return r.means_[0, 0] + sig * np.sqrt(r.covars_[0, 0])
+        mu,std = norm.fit(inp.RATE.values)
+        r = [mu,std*sig]
+        return r
 
 def xmm_gti(filename, df=False):
     '''
