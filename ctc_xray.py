@@ -228,8 +228,8 @@ def emllist(df,mosaic=False):
             dfm2.is_copy = False
             df_out['OFFAXm1'] = dfm1.OFFAX.values
             df_out['OFFAXm2'] = dfm2.OFFAX.values
-            df_out['OFFAXpn'] = dfpn.OFFAX.values        
-            df_out['OFFAX'] = (df_out.OFFAXm1+df_out.OFFAXm2+df_out.OFFAXpn)/3.        
+            df_out['OFFAXpn'] = dfpn.OFFAX.values
+            df_out['OFFAX'] = (df_out.OFFAXm1+df_out.OFFAXm2+df_out.OFFAXpn)/3.
         elif len(dfm1) == len(dfm2):
             #usually it's PN that's problematic, so consider only M1 and M2
             dfm1.is_copy = False
@@ -259,9 +259,14 @@ def emllist(df,mosaic=False):
         else:
             print('more than two cameras are problematic, returning the original with OFFAX=np.nan')
             df_out['OFFAX'] = np.nan
-            
+
             #
         df_out.reset_index(inplace=True)
         return df_out
     else:
-        return df
+        df_out = df.copy()
+        dfpn = df_out[df_out.ID_INST == 1.0]
+        dfm1 = df_out[df_out.ID_INST == 2.0]
+        dfm2 = df_out[df_out.ID_INST == 3.0]
+        df_out = df_out[df_out.ID_INST == 0.0]
+        return df_out
