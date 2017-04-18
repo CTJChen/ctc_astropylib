@@ -265,8 +265,6 @@ def emllist(df,mosaic=False):
         return df_out
     else:
         df_out = df.copy()
-        dfpn = df_out[df_out.ID_INST == 1.0]
-        dfm1 = df_out[df_out.ID_INST == 2.0]
-        dfm2 = df_out[df_out.ID_INST == 3.0]
         df_out = df_out[df_out.ID_INST == 0.0]
+        df_out.reset_index(inplace=True)
         return df_out
