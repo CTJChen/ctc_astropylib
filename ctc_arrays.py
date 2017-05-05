@@ -11,7 +11,7 @@ def awhere(arr1,arr2):
 	#sort arr1
 	id_sort = np.argsort(arr2)
 	sorted_arr2 = arr2[id_sort]
-	sorted_id = np.searchsorted(sorted_arr2, arr1) 
+	sorted_id = np.searchsorted(sorted_arr2, arr1)
 	sorted_id[arr2[sorted_id] != arr1] = -1
 	return sorted_id
 
@@ -38,9 +38,14 @@ def match_unique(id_cat1,id_cat2,d2d,d3d=None,cols=None):
 		cols = cols[0:2]
 		cols.append('dist')
 	else:
-		cols.append('dist')		
+		cols.append('dist')
 	df = pd.DataFrame({cols[0]:id_cat1,cols[1]:id_cat2,cols[2]:dist})
 	grp = df.groupby(cols[0])
 	df_out = grp.apply(lambda t:t[t.dist == t.dist.min()] if sum(t.dist==t.dist.min()) == 1 else t[t[cols[1]] == t[cols[1]].min()])
 	df_out['nmatch'] = grp.count().dist.values
 	return df_out
+
+
+def binvalue(bins):
+	binv = [0.5*(i[0]+i[1]) for i in zip(bins,bins[1:])]
+	return binv
