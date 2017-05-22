@@ -4,6 +4,12 @@ find the arr2 indicies for the corresponding arr1 input
 '''
 import numpy as np
 import pandas as pd
+from astropy.io import fits
+from astropy.table import Table as tab
+
+def readfits(fname):
+	return tab(fits.getdata(fname)).to_pandas()
+
 def awhere(arr1,arr2):
 	'''
 	This only works if arr1 is a subset of arr2
