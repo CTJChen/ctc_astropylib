@@ -174,7 +174,7 @@ def calc_LR(xdf, xcat, optdf,catopt,nm, qm, Q, rmag, rsearch=5.0,\
 	'raopt':optdf.loc[idhsc,ora].values,'decopt':optdf.loc[idhsc,odec].values,\
 	'rax':xdf.loc[idxmm,xra].values,'decx':xdf.loc[idxmm,xdec].values,\
 	'optname':optdf.loc[idhsc,opticalid].values})
-	print('match len = ',len(match), 'xid nunique = ', match.xid.nunique())
+	#print('match len = ',len(match), 'xid nunique = ', match.xid.nunique())
 	fr = pdf_sep_gen(match.dist.values,match.xposerr.values,opterr,pdf=pdf)
 	n_m = interp1d(rmag, nm, bounds_error=False,fill_value='extrapolate')
 	q_m = interp1d(rmag, qm, bounds_error=False,fill_value='extrapolate')
