@@ -17,7 +17,12 @@ import math
 from os.path import expanduser
 import sys
 home = expanduser("~")
-
+'''
+import progressbar
+pbar = progressbar.ProgressBar(widgets=[
+    progressbar.Percentage(), '|', progressbar.Counter('%6d'),
+    progressbar.Bar(), progressbar.ETA()])
+'''
 
 def int_pl(x1, x2, gam, nstp=None):
     if nstp is None:
@@ -91,8 +96,8 @@ def ledd(mbh, lam_edd, lx=None, bc=None):
         return lx
 
 
-def behr_wrap(softsrc, hardsrc, softbkg, hardbkg, softarea, hardarea, verbose=False, invertBR=False):
-    wd_behr = home + '/Dropbox/nustar_dwarf/otherdata/BEHR/ &&'
+def behr_wrap(softsrc, hardsrc, softbkg, hardbkg, softarea, hardarea, softeff, hardeff,verbose=False, invertBR=False, prog = False):
+    wd_behr = home + '/lib/BEHR/ &&'
     if invertBR:
         str_ssrc = ' softsrc=' + str(math.ceil(hardsrc))
         str_hsrc = ' hardsrc=' + str(math.ceil(softsrc))
@@ -100,6 +105,8 @@ def behr_wrap(softsrc, hardsrc, softbkg, hardbkg, softarea, hardarea, verbose=Fa
         str_hbkg = ' hardbkg=' + str(math.ceil(softbkg))
         str_sarea = ' softarea=' + str(hardarea)
         str_harea = ' hardarea=' + str(softarea)
+        str_seff = ' softeff=' + str(hardeff)
+        str_heff = ' hardeff=' + str(softeff)
     else:
         str_ssrc = ' softsrc=' + str(math.ceil(softsrc))
         str_hsrc = ' hardsrc=' + str(math.ceil(hardsrc))
@@ -107,26 +114,30 @@ def behr_wrap(softsrc, hardsrc, softbkg, hardbkg, softarea, hardarea, verbose=Fa
         str_hbkg = ' hardbkg=' + str(math.ceil(hardbkg))
         str_sarea = ' softarea=' + str(softarea)
         str_harea = ' hardarea=' + str(hardarea)
+        str_seff = ' softeff=' + str(hardeff)
+        str_heff = ' hardeff=' + str(softeff)
     behr_run = 'cd ' + wd_behr + ' ./BEHR' + str_ssrc + str_hsrc + \
-        str_sbkg + str_hbkg + str_sarea + str_harea + ' && cd -'
+        str_sbkg + str_hbkg + str_sarea + str_harea + str_seff + str_heff + ' && cd -'
     if verbose:
         print(behr_run)
     p = subprocess.Popen(behr_run, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True)
     td = StringIO(p.communicate()[0].decode('ascii'))
-    df = pd.read_csv(td, sep='\t', comment='#')
-    df.ix[0, 1:-2] = df.ix[0, 2:-1].values
-    df.drop(['Median', 'Unnamed: 7', 'Lower Bound',
-             'Upper Bound'], axis=1, inplace=True)
-    if len(df) == 4:
-        df.drop(3, inplace=True)
-    df.rename(columns={'Unnamed: 0': 'Out', 'Unnamed: 1': 'Mode',
-                       'Mode': 'Mean', 'Unnamed: 3': 'Median',
-                       'Mean': 'LowerB', 'Unnamed: 5': 'UpperB'}, inplace=True)
+    df = pd.DataFrame(columns=['Out', 'Mode', 'Mean', 'Median', 'LowerB', 'UpperB'],index=range(3))
+    for line in td:
+        if '#(S/H)' in line:
+            df.loc[0,:] = str.split(line)
+        elif '(H-S)/(H+S)' in line:
+            df.loc[1,:] = str.split(line)
+        elif 'log10(S/H)' in line:
+            df.loc[2,:] = str.split(line)
+    df.ix[:,1] = df.ix[:,1].astype(float)
+    df.ix[:,2] = df.ix[:,2].astype(float)
+    df.ix[:,3] = df.ix[:,3].astype(float)
     return df
 
 
-def behrhug(df_input, verbose=False, invertBR=False):
+def behrhug(df_input, verbose=False, invertBR=False, prog=False,nprog=20):
     '''
     Python wrapper of BEHR
     set invertBR=Tru for band ratio H/S
@@ -134,20 +145,25 @@ def behrhug(df_input, verbose=False, invertBR=False):
     Note that the hardness ratio would be wrong if invertBR is set.
     '''
     cols = ['BR', 'BR_LB', 'BR_UB', 'HR', 'HR_LB',
-            'HR_UB', 'logBR', 'logBR_LB', 'logBR_UB']
+            'HR_UB', 'logBR', 'logBR_LB', 'logBR_UB',
+            'mBR','mHR','mlogBR']
     df_out = pd.DataFrame(index=df_input.index,
                           columns=cols)
+    if prog:
+        fracid = np.linspace(0,len(df_input),nprog,dtype=int)
     for index, row in df_input.iterrows():
         df = behr_wrap(row.softsrc, row.hardsrc, row.softbkg, row.hardbkg, row.softarea, row.hardarea,
-                       verbose=verbose, invertBR=invertBR)
-        df_out.loc[index, ['BR', 'BR_LB', 'BR_UB']] = df.loc[
-            0, ['Median', 'LowerB', 'UpperB']].values.astype(float)
-        df_out.loc[index, ['HR', 'HR_LB', 'HR_UB']] = df.loc[
-            1, ['Median', 'LowerB', 'UpperB']].values.astype(float)
-        df_out.loc[index, ['logBR', 'logBR_LB', 'logBR_UB']] = df.loc[
-            2, ['Median', 'LowerB', 'UpperB']].values.astype(float)
+                       row.softeff, row.hardeff, verbose=verbose, invertBR=invertBR)
+        df_out.loc[index, ['BR', 'BR_LB', 'BR_UB','mBR']] = df.loc[
+            0, ['Median', 'LowerB', 'UpperB','Mode']].values.astype(float)
+        df_out.loc[index, ['HR', 'HR_LB', 'HR_UB','mHR']] = df.loc[
+            1, ['Median', 'LowerB', 'UpperB','Mode']].values.astype(float)
+        df_out.loc[index, ['logBR', 'logBR_LB', 'logBR_UB','mlogBR']] = df.loc[
+            2, ['Median', 'LowerB', 'UpperB','Mode']].values.astype(float)
+        if prog:
+            if index in fracid:
+                print(int(100*index/len(df_out)),'%')
     return df_out
-
 
 def xmm_bkgd(filename, df=False, fit=False, sig=None):
     '''

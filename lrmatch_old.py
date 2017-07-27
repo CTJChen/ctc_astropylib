@@ -70,20 +70,18 @@ def getbkgcat(xcat,catopt,optdf,r_in = 7., r_out=35.,\
     return nm,rmagbin
 
 #def getqm(match,rmagbin, Q, NX, nm, r0=2.5):
-def getqm(match,rmagbin, Q, nm, NX, r0=3.0):
+def getqm(match,rmagbin, Q):
 	'''
     Estimate q(m) -- the expected optical counterpart magnitude
     distribution of at magintude m
 	'''
 	grp=match.groupby(pd.cut(match['rmag'].values,bins=rmagbin))
 	real_m=grp.rax.count().values# - np.pi*r0**2*NX*nm
-	real_m[np.where(real_m < 0.)] = \
-	0.1*nm[np.where(real_m < 0.)]*np.pi*NX*r0**2
 	qm = real_m*Q/np.sum(real_m)
 	return qm, Q, real_m
 
 
-def calc_RC(match, quntarr, Q,lxcat,LRfrac=0.2,first=False):
+def calc_RC(match, quntarr, Q,lxcat,LRfrac=0.2):
 	'''
 	If quntarr is an array with length > 1 (and values between 0 to 1)
 	This subroutine finds the LRth value that maximize C and R.
@@ -93,8 +91,6 @@ def calc_RC(match, quntarr, Q,lxcat,LRfrac=0.2,first=False):
 	if type(lxcat) != float:
 		lxcat = float(lxcat)
 	if np.isscalar(quntarr):
-		#print('calc_RC : scalar detected')
-		#return allmatch, R, C, LRth if lth is a scalar
 		LRth = quntarr
 		tmp = match[match.LR > LRth].copy()
 		grp = tmp.groupby('xid')
@@ -118,11 +114,8 @@ def calc_RC(match, quntarr, Q,lxcat,LRfrac=0.2,first=False):
 			allmatch = onematch
 		R = allmatch.Rc.mean()
 		C = allmatch.Rc.sum()/lxcat
-		return allmatch, R, C, LRth
-	elif first:
-		#print('calc_RC : first=True detected')		
-		#if it's the first time, loop through the LR values in quantile arrays
-		#return R, C, LRth
+		return allmatch, R, C
+	else:
 		R = np.zeros(len(quntarr))
 		C = np.zeros(len(quntarr))
 		LRth = np.zeros(len(quntarr))
@@ -158,45 +151,6 @@ def calc_RC(match, quntarr, Q,lxcat,LRfrac=0.2,first=False):
 				R[index] = -1.
 				C[index] = -1.
 		return R, C, LRth
-	else:
-		#return otherwise simly loop throug the input lth
-		#return R, C, LRth
-		R = np.zeros(len(quntarr))
-		C = np.zeros(len(quntarr))
-		LRth = quntarr
-		for index, i in enumerate(LRth):
-			#LRth[index] = match.LR.quantile(i)
-			tmp = match[match.LR > LRth[index]].copy()
-			grp = tmp.groupby('xid')
-			#select sources with only one match
-			onematch = grp.filter(lambda x: len(x) == 1).copy()
-			onematch.reset_index(inplace=True)
-			onematch['Rc'] = onematch.LR.values/(onematch.LR.values + 1 - Q)
-			#these are sources with multiple matches
-			multimatch = grp.filter(lambda x: len(x) > 1).copy()
-			#regroup, and for each group only keep sources with LR larger than 0.2*max(LR)
-			grp = multimatch.groupby('xid')
-			igood = grp.apply(lambda df:df.LR/df.LR.max() >= LRfrac).values
-			if np.sum(igood) > 0:
-				multimatch = multimatch[igood]
-				if multimatch.xid.nunique() > 1:
-					grp = multimatch.groupby('xid')
-					multiRc = grp.apply(lambda df: df.LR/(df.LR.sum()+(1-Q))).values
-					multimatch['Rc'] = multiRc
-					multimatch.reset_index(inplace=True)
-					allmatch = pd.concat([onematch,multimatch])
-					R[index] = allmatch.Rc.mean()
-					C[index] = allmatch.Rc.sum()/lxcat
-				else:
-					multimatch = multimatch[igood]
-					multimatch['Rc'] = multimatch.LR/(multimatch.LR.sum()+(1-Q))
-					allmatch = pd.concat([onematch,multimatch])
-			else:
-				allmatch = onematch
-				R[index] = -1.
-				C[index] = -1.
-		return R, C, LRth
-
 		'''
 		func = interp1d(quntarr, T, bounds_error=False,fill_value='extrapolate')
 		lthmax = np.linspace(0.,1.,1000)[np.where(func(np.linspace(0.,1.,1000)) ==
@@ -208,7 +162,7 @@ def calc_LR(xdf, xcat, optdf,catopt,nm, qm, Q, rmag, rsearch=5.0,\
 			lth = np.linspace(0.05,0.9,10), LRfrac=0.2,lrmax=None,\
 			magname = 'imag_psf',xerrname='xposerr',
             xra = 'RA', xdec = 'DEC', ora = 'ra', odec = 'dec',
-            opticalid = 'hscid',opterr = 0.05,pdf='Rayleigh',first=False):
+            opticalid = 'hscid',opterr = 0.05,pdf='Rayleigh'):
 	'''
 	input variables:
 	xdf, xcat, optdf,catopt,optdf,nm, qm, Q, rmag, rsearch=5.0,\
@@ -239,8 +193,7 @@ def calc_LR(xdf, xcat, optdf,catopt,nm, qm, Q, rmag, rsearch=5.0,\
 		return match, match, 1.0, 1.0, match.LR.min()
 	else:
 		if lrmax is None:
-			#first
-			R, C, LRth = calc_RC(match, lth, Q, len(xcat),LRfrac=LRfrac,first=first)
+			R, C, LRth = calc_RC(match, lth, Q, len(xcat),LRfrac=LRfrac)
 			func = interp1d(LRth, R+C, bounds_error=False,fill_value='extrapolate')
 			arr = match.LR.values
 			farr = func(arr)
@@ -248,11 +201,11 @@ def calc_LR(xdf, xcat, optdf,catopt,nm, qm, Q, rmag, rsearch=5.0,\
 			if not np.isscalar(lthmax):
 				if len(lthmax) >= 1:
 					lthmax = lthmax[0]
-			goodmatch, R, C, LRth  = calc_RC(match,lthmax, Q, len(xcat),LRfrac=LRfrac)
-			return match, goodmatch, R, C, lthmax, LRth
+			goodmatch, R, C  = calc_RC(match,lthmax, Q, len(xcat),LRfrac=LRfrac)
+			return match, goodmatch, R, C, lthmax
 		else:
-			goodmatch, R, C, LRth  = calc_RC(match,lrmax, Q, len(xcat),LRfrac=LRfrac)
-			return match, goodmatch, R, C, lrmax, LRth
+			goodmatch, R, C  = calc_RC(match,lrmax, Q, len(xcat),LRfrac=LRfrac)
+			return match, goodmatch, R, C, lrmax
 
 def likmatch(xdf, xcat, optdf_in, catopt, radecerr = False, r0=2.5,rsearch=5.0, \
 	r_in = 7., r_out=35., lth = np.linspace(0.05,0.9,10),LRfrac=0.2,lrmax=None,\
@@ -286,11 +239,11 @@ def likmatch(xdf, xcat, optdf_in, catopt, radecerr = False, r0=2.5,rsearch=5.0, 
 	dfout = xdf.copy(deep=True)
 	dfout.reset_index(inplace=True)
 	#Background number surface density
+	if verbose:print('Calculating background mag. distribution, nm')
 	nm, rmagbin = getbkgcat(xcat,catopt,optdf,r_in = r_in, r_out=r_out,
 	nmagbin=nmagbin, magname = magname,ora=ora,odec=odec)
-	if verbose:print('Calculating background mag. distribution, nm')
-	#nm = nm/np.sum(nm)
 	#Calculating qm for the first time using r0
+	if verbose:print('Calculating initial counterpart mag. dist., qm')
 	idopt_r0,idxmm,d2d,d3d=xcat.search_around_sky(catopt,r0*u.arcsec)
 	N1 = float(len(np.unique(idopt_r0)))
 	Q = N1/NX
@@ -303,41 +256,35 @@ def likmatch(xdf, xcat, optdf_in, catopt, radecerr = False, r0=2.5,rsearch=5.0, 
 	real_m0=total_m-np.pi*r0**2*NX*nm
 	real_m0[np.where(real_m0 < 0.)] = 0.1*nm[np.where(real_m0 < 0.)]*np.pi*NX*r0**2
 	qm0 = real_m0*(Q/np.sum(real_m0))
-
 	#for unrealistical qm values (<0), assuming the real counterpart distribution is the same
 	#as the background
 	#qm0[np.where(qm0 < 0.)] = nm[np.where(qm0 < 0.)]
 
 	rmag = binvalue(rmagbin)
-	if verbose:print('Calculating initial counterpart mag. dist., qm')	
-	if verbose:print('Calculating background mag. distribution, rmag = ')
-
 	density = pd.DataFrame({'rmag':rmag,'qms'+str(np.round(Q,2)):qm0,'nm':nm,'real_ms':real_m0})
 	#With qm, nm, and Q, calculate the first match
 	if verbose:print('First LR matching')
-	match, goodmatch, R, C, lthmax, LRth = \
+	match, goodmatch, R, C, lthmax = \
 	calc_LR(xdf, xcat, optdf,catopt,nm, qm0, Q, rmag, rsearch=rsearch,LRfrac=LRfrac,\
 			lth = lth,lrmax=lrmax, magname = magname,xerrname=xerrname,
 	        xra = xra, xdec = xdec, ora = ora, odec = odec,
-	        opticalid = opticalid,opterr=opterr,pdf=pdf,first=True)
+	        opticalid = opticalid,opterr=opterr,pdf=pdf)
+
 	if verbose:print('Q0='+str(Q), 'R0='+str(R),'C0='+str(C), len(goodmatch), lthmax)
 	#With the new ``matched sources'', recalculate qm again until C and R converges
 	if lrmax is None:
 		for i in range(niter):
 			if len(goodmatch) == 0:
-				print('No goodmatches (LRthreshold = ',lthmax,'), resetting to 0.4')
-				lthmax = 0.4
-			lth = np.sort(np.hstack((match.LR.quantile([0.01, 0.25, 0.5, 0.75, 0.9]).values, \
-				np.linspace(lthmax*0.75,lthmax*1.25,5))))
-			if i == 0: lthmax0 = lthmax *1.
-			if verbose:print('Iter',i, 'new LRth = ', lthmax, 'old LRth =', lthmax0 )
-			lthmax0 = lthmax * 1. 			
-			qm, Q, real_m = getqm(goodmatch,rmagbin, C, nm, NX, r0 = r0)#, NX, nm)
-			match, goodmatch, R, C, lthmax, LRth = \
+				print('No goodmatch in first round, breaking now')
+				break
+			lthmax0 = lthmax.copy()
+			if verbose:print('Iterative LR matching')
+			qm, Q, real_m = getqm(goodmatch,rmagbin, C)#, NX, nm)
+			match, goodmatch, R, C, lthmax = \
 			calc_LR(xdf, xcat, optdf,catopt,nm, qm, Q, rmag, rsearch=rsearch,LRfrac=LRfrac,\
 					lth = lth, lrmax=lrmax , magname = magname,xerrname=xerrname,\
 			        xra = xra, xdec = xdec, ora = ora, odec = odec,\
-			        opticalid = opticalid,opterr=opterr,pdf=pdf, first=False)
+			        opticalid = opticalid,opterr=opterr,pdf=pdf)
 			density['qm'+str(i)+'_'+str(np.round(Q,2))] = pd.Series(qm,index=density.index)
 			density['real_m'+str(i)] = pd.Series(real_m,index=density.index)
 			if verbose:print(R, C, len(goodmatch),lthmax)
@@ -345,17 +292,10 @@ def likmatch(xdf, xcat, optdf_in, catopt, radecerr = False, r0=2.5,rsearch=5.0, 
 				if verbose:print('LR threshold converges, breaking now')
 				density['qmfinal'] = pd.Series(qm,index=density.index)
 				break
-			elif i == max(range(niter)):
-				density['qmfinal'] = pd.Series(qm,index=density.index)
+            elif i == max(range(niter)):
+                density['qmfinal'] = pd.Series(qm,index=density.index)
 		return match,goodmatch, R, C, density, lthmax, rmagbin
 	else:
-		match, goodmatch, R, C, lthmax, LRth = \
-		calc_LR(xdf, xcat, optdf,catopt,nm, qm0, Q, rmag, rsearch=rsearch,LRfrac=LRfrac,\
-				lth = lth,lrmax=lrmax, magname = magname,xerrname=xerrname,
-		        xra = xra, xdec = xdec, ora = ora, odec = odec,
-		        opticalid = opticalid,opterr=opterr,pdf=pdf)
-		qm, Q, real_m = getqm(goodmatch,rmagbin, C, nm, NX, r0 = r0)
-		density['qmfinal'] = pd.Series(qm,index=density.index)
 		return match,goodmatch, R, C, density, lthmax, rmagbin
 
 
@@ -377,7 +317,7 @@ def likmatch_rerun(xdf, xcat, optdf_in, catopt, density, radecerr = False, r0=2.
 	nm = density.nm.values
 	qm = density.qmfinal.values
 	rmag = density.rmag.values
-	match, goodmatch, R, C, lthmax, LRth = \
+	match, goodmatch, R, C, lthmax = \
 	calc_LR(xdf, xcat, optdf,catopt,nm, qm, Q, rmag, rsearch=rsearch,LRfrac=LRfrac,\
 			lth = lth,lrmax=lrmax, magname = magname,xerrname=xerrname,
 	        xra = xra, xdec = xdec, ora = ora, odec = odec,

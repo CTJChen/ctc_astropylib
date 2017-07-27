@@ -142,3 +142,41 @@ def makecd(ra,dec,radec=None):
         return cd.SkyCoord(radec)
     else:
         return cd.SkyCoord(ra,dec,unit=(u.degree,u.degree))
+
+
+
+def makereg(ra,dec,fname,radius=15.,color='green'):
+    '''
+    Takes RA/DEC/fname
+    write the RA/DECs into circular ds9 regions
+    '''
+    f = open(fname,'w')
+    comments = 'global color=' + color+' dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'
+    comments += ' fk5\n'
+    radius = str(radius)
+    f.write(comments)
+    for index,r in enumerate(ra):
+        f.write('circle(' + 
+                str(np.round(r,6)) + ',' + 
+                str(np.round(dec[index],6)) + ', '+radius+'\")\n')
+    f.close()        
+
+
+def angular_sep(ra1,dec1,ra2,dec2,deg=False):
+    '''
+    angular_sep(ra1,dec1,ra2,dec2,deg=False)
+    Compute the angular separation between [ra1, dec1], and [ra2, dec]
+    input could be arrays or scalars
+    default return is in arcsec.
+    Set deg = True for degrees.
+    '''
+    separcsec = np.rad2deg(np.arccos(np.cos(
+        np.deg2rad( 90. - dec1)) * np.cos(
+        np.deg2rad( 90. - dec2)) + np.sin(
+        np.deg2rad( 90. - dec1)) * np.sin(
+        np.deg2rad( 90. - dec2)) * np.cos(
+        np.deg2rad( ra1 - ra2))))*3600.
+    if deg:
+        separcsec = separcsec/3600.
+    return separcsec
+

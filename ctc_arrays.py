@@ -38,9 +38,9 @@ def match_unique(id_cat1,id_cat2,d2d,d3d=None,cols=None):
 		dist = d2d
 	#use user defined column names when applicable
 	if cols is None:
-		cols = ['id_cat1','id_cagt2','dist']
+		cols = ['id_cat1','id_cat2','dist']
 	elif len(cols)>2:
-		print('only takes a list of the 2 column names, no need to name dist array')
+		print('only takes the names of the two catalogs, no need to name dist arrays')
 		cols = cols[0:2]
 		cols.append('dist')
 	else:
