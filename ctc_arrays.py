@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table as tab
+import statsmodels.nonparametric.api as smnp
 
 def readfits(fname):
 	return tab(fits.getdata(fname)).to_pandas()
@@ -55,3 +56,39 @@ def match_unique(id_cat1,id_cat2,d2d,d3d=None,cols=None):
 def binvalue(bins):
 	binv = [0.5*(i[0]+i[1]) for i in zip(bins,bins[1:])]
 	return binv
+
+def kde1d(arr,kernel='gau', bw=0.2):
+	'''
+	use statsmodels.nonparametric.api to do density estimation
+	'''
+	kde = smnp.KDEUnivariate(arr)
+	kde.fit(bw=bw,kernel=kernel)
+	xgrid = np.linspace(min(arr),max(arr),100)
+	dist_kde = kde.evaluate(xgrid)
+	return xgrid, dist_kde
+
+def sampdist(df1, df2, sampcol,bins=10):
+    '''
+    Return a DF that's randomly sampled from df2, according
+    to the given distribution of sampcol in df1
+    bins could be the number of bins (int), or the bins (array/list/tuple) to be used
+    '''
+    try:
+        out, sbin = pd.cut(df1[sampcol],bins = bins,retbins=True)
+        grp = df1.groupby(out)
+        nsrcs = grp[sampcol].count().values
+        arr_id2 = np.array([])
+        for idx in range(len(sbin) - 1):
+            s0 = sbin[idx]
+            s1 = sbin[idx+1]
+            nbin = nsrcs[idx]
+            if (nbin > 0) & (sum((df2[sampcol] >= s0) & (df2[sampcol] < s1)) > 0):
+                id2 = df2[(df2[sampcol] >= s0) & (df2[sampcol] < s1)].sample(nbin,replace=True).index.values
+                arr_id2 = np.hstack((arr_id2,id2))
+        return arr_id2
+    except (~sampcol in df1.columns) | (~sampcol in df2.columns):
+        print(sampcol, ' must be in both input dataframes')
+
+
+
+
