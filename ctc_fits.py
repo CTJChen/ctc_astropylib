@@ -7,7 +7,7 @@ from astropy import wcs
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from ctc_observ import makecd
-
+import copy
 
 
 def readfits(fname):
@@ -26,15 +26,22 @@ def makecutout(ra, dec, size, image=None, header=None, filename=None, savefig=No
     --savefig : should be a string of the cropped fits filename to be saved
     '''
     if filename is not None:
-    	hdu = fits.open(filename)
-    	image = hdu[0].data
-    	header = hdu['PRIMARY'].header
-    fitswcs = wcs.WCS(header)
+        hdu = fits.open(filename)
+        cutoutimage = hdu[0].data
+        cutoutheader = hdu['PRIMARY'].header
+    else:
+        cutoutimage = copy.deepcopy(image)
+        cutoutheader = copy.deepcopy(header)
+    fitswcs = wcs.WCS(cutoutheader)
     position = makecd(ra, dec)#, frame='icrs')
-    cutout2 = Cutout2D(image, position, size, wcs=fitswcs)
-    wcs_cropped = cutout2.wcs
-    header.update(wcs_cropped.to_header())
-    if savefig is not None:
-    	hdu = fits.PrimaryHDU(cutout2.data, header=header)
-    	hdu.writeto(savefig, overwrite=True)
+    try:
+        cutout2 = Cutout2D(cutoutimage, position, size, wcs=fitswcs)
+        wcs_cropped = cutout2.wcs
+        cutoutheader.update(wcs_cropped.to_header())
+        if savefig is not None:
+            hdu = fits.PrimaryHDU(cutout2.data, header=cutoutheader)
+            hdu.writeto(savefig, overwrite=True)
+    except ValueError:
+        print('Out of bound')
+        cutout2 = 0
     return cutout2
