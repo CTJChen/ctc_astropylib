@@ -20,11 +20,11 @@ def ratetoflux(row,band='soft',err=False,ind=1.):
 
     '''
     if band == 'soft':
-        ecf = [1e-11/7.45, 1e-11/2.0]
+        ecf = [1e-11/6.23, 1e-11/1.77]
     elif band == 'hard':
-        ecf = [1e-11/1.22, 1e-11/0.45]
+        ecf = [1e-11/1.15, 1e-11/0.43]
     elif band == 'full':
-        ecf = [1e-11/3.26, 1e-11/0.97]
+        ecf = [1e-11/2.84, 1e-11/0.88]
     elif band == 'med':
         ecf = [1e-11/1.9496978, 1e-11/0.76394]
     elif band == 'uhd':
