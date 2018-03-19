@@ -1,6 +1,7 @@
 import scipy.stats.distributions as dist
 import numpy as np
 from astropy.coordinates import Distance
+from sklearn.neighbors import NearestNeighbors
 
 def bayes_ci(k, n, sigma=None):
     '''
@@ -100,3 +101,25 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     lastvals = y[-1] + np.abs(y[-half_window-1:-1][::-1] - y[-1])
     y = np.concatenate((firstvals, y, lastvals))
     return np.convolve( m[::-1], y, mode='valid')
+
+
+def get_distnn(ra, dec, algorithm='auto'):
+    '''
+    Use sklearn.neighbors.NearestNeighbors
+    to compute the distance to nearest neighbors for a set of RA and dec
+    ra, dec should be in degrees (floats or doubles)
+    the outputs are:
+    distnn and idnn
+    distnn is in arcsec by default.
+    The default algorithm is auto, 
+    but scikitlearn allows the following options:
+    ['auto', 'ball_tree', 'kd_tree', 'brute']
+
+    '''
+    X = np.vstack((ra,dec)).transpose()
+    nbrs = NearestNeighbors(n_neighbors=2, algorithm=algorithm).fit(X)
+    distances, indices = nbrs.kneighbors(X)
+    distnn = distances[:,1]*3600.
+    idnn = indices[:,1]
+    return distnn,idnn
+

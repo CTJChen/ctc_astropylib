@@ -12,6 +12,35 @@ import os
 #home = '/Users/cuc36'
 __doc__ = " "
 
+def get_photoz_stat(zs, zp):
+    '''
+    Calculate sigma_nmad, median(det_z / (1 + z_spec)), 
+    outlier ids, outlier num and fraction, and print on the screen
+    
+    Inputs:
+        zs, z_spec array
+        zp, z_phot array
+    Output:
+        out, outlier id array
+    '''
+
+    det_z = zp - zs     # Delta_z and its median value
+    med_det_z = np.median(det_z)
+    sigm = 1.48 * np.median(abs(det_z - med_det_z) / (1 + zs))  # Sigma_nmad
+
+    err = det_z / (1 + zs)  # Relative errors
+    out = np.arange(len(zs))[abs(err) > 0.15]   # Outlier ids, using relative error > 0.15 criterion 
+    out_num = len(out)  # outlier num and fraction
+    out_fra = float(len(out)) / len(zs)
+    
+    med = np.median(det_z / (1 + zs))   # Median(det_z / (1 + z_spec)) 
+
+    print('Source Num. %d' %len(zs))    # Output to screen
+    print('Sigma_nmad: %.4f' %sigm)
+    print('Outlier: num=%d, frac=%.3f' %(out_num, out_fra))
+    print('Median_error: %.5f' %med)
+
+    return out  # Return outlier ids
 
 def ratetoflux(row,band='soft',err=False,ind=1.):
     '''

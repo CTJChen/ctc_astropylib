@@ -1,7 +1,7 @@
 
 import numpy as np
-import urllib.request, urllib.error, urllib.parse
-import urllib.request, urllib.parse, urllib.error
+import urllib2
+import urllib
 import os
 import os.path
 import argparse
@@ -29,16 +29,16 @@ def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=None,ver=None,columns=None):
         # for POST request
         values = {'cmd': sSQL_query,
                             'format': 'csv'}
-        data = urllib.parse.urlencode(values)
-        request = urllib.request.Request(sURL, data)
-        response = urllib.request.urlopen(request)
+        data = urllib.urlencode(values)
+        request = urllib2.Request(sURL, data)
+        response = urllib2.urlopen(request)
         return response.read()
         
     sql_str=gen_SDSS_sql(ra,dec,search_radius)
     sdss_ds=query_SDSS(sql_str)
     lines=sdss_ds.split('\n')
     nobj=len(lines)-2
-    if ver:print((str(nobj)+' SDSS objects found'))
+    if ver:print(str(nobj)+' SDSS objects found')
     if nobj >0:
         cols=lines[0].split(',')
         #pop columnes and the EOF line
@@ -47,7 +47,7 @@ def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=None,ver=None,columns=None):
         rows=[]
         for i in lines:
             tt=i.split(',')
-            tt=list(map(float,tt))
+            tt=map(float,tt)
             rows.append(tt)
         tab_out=tab(rows=rows,names=cols)
         if pandas:
@@ -80,16 +80,16 @@ def load_SDSS_phot_dr12(ra,dec,search_radius,pandas=None,ver=None,columns=None):
         # for POST request
         values = {'cmd': sSQL_query,
                             'format': 'csv'}
-        data = urllib.parse.urlencode(values)
-        request = urllib.request.Request(sURL, data)
-        response = urllib.request.urlopen(request)
+        data = urllib.urlencode(values)
+        request = urllib2.Request(sURL, data)
+        response = urllib2.urlopen(request)
         return response.read()
         
     sql_str=gen_SDSS_sql(ra,dec,search_radius)
     sdss_ds=query_SDSS(sql_str)
     lines=sdss_ds.split('\n')
     nobj=len(lines)-2
-    if ver:print((str(nobj)+' SDSS objects found'))
+    if ver:print(str(nobj)+' SDSS objects found')
     if nobj >0:
         #pop table name and the EOF line
         lines.pop(0)
@@ -100,7 +100,7 @@ def load_SDSS_phot_dr12(ra,dec,search_radius,pandas=None,ver=None,columns=None):
         rows=[]
         for i in lines:
             tt=i.split(',')
-            tt=list(map(float,tt))
+            tt=map(float,tt)
             rows.append(tt)
         tab_out=tab(rows=rows,names=cols)
         if pandas:
@@ -135,7 +135,7 @@ def IRSA_TAP(ra,dec,search_radius,irsa_table,pandas=False,sql_SELECT=None,sql_WH
     urlquery = sURL+str_select+str_from+str_where+str_coord
     if verbose:
         print(urlquery)
-    response=urllib.request.urlopen(urlquery)
+    response=urllib2.urlopen(urlquery)
     if pandas:
         tab_out = votble.parse_single_table(response).to_pandas()
     else:

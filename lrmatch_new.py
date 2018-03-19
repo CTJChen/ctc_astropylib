@@ -1,5 +1,4 @@
 import pandas as pd
-from astropy.io import fits
 import astropy.coordinates as cd
 from ctc_observ import *
 from ctc_arrays import *
@@ -21,6 +20,46 @@ def pdf_sep_gen(sep_arcsec,xposerr,opterr,pdf='Rayleigh'):
 	else:
 		poserr = (opterr**2+xposerr**2)
 		return (sep_arcsec/poserr)*np.exp((-sep_arcsec**2)/poserr)
+
+
+def MLE(match):
+    '''
+    R and C for a single LRthreshold value
+    '''
+    if 'level_0' in match.columns:
+    	match = match.drop('level_0',axis=1)
+    if 'index' in match.columns:
+    	match = match.drop('index',axis=1)
+    tmp = match.set_index('matchid')
+    grp = tmp.groupby('xid')
+    #select sources with only one match
+    onematch = grp.filter(lambda x: len(x) == 1).copy()
+    onematch['Rc'] =  1.0
+    #these are sources with multiple matches
+    multimatch = tmp.loc[np.delete(tmp.index.values, onematch.index.values),:]
+    #onematch.reset_index(inplace=True)
+    nmx = match.xid.nunique() - onematch.xid.nunique()
+    if 'level_0' in onematch.columns:
+    	onematch = onematch.drop('level_0',axis=1)
+    if 'index' in onematch.columns:
+    	onematch = onematch.drop('index',axis=1)
+    if 'level_0' in multimatch.columns:
+    	multimatch = multimatch.drop('level_0',axis=1)
+    if 'index' in multimatch.columns:
+    	multimatch = multimatch.drop('index',axis=1)
+
+    if nmx == 0:
+        allmatch = onematch
+    elif nmx == 1:
+        multimatch['Rc'] = multimatch.LR / multimatch.LR.sum()
+        allmatch = pd.concat([onematch,multimatch],ignore_index=False)
+    else:
+    #regroup, and for each group only keep sources with LR larger than LRfrac*max(LR)
+        grp = multimatch.groupby('xid')
+        multiRc = grp.apply(lambda df: df.LR / df.LR.sum()).values
+        multimatch['Rc'] = multiRc
+        allmatch = pd.concat([onematch,multimatch],ignore_index=False)
+    return allmatch.reset_index().sort_values(by='matchid').reset_index().drop('index',axis=1)
 
 
 def getbkgcat(xcat,catopt,optdf,r_in = 7., r_out=35.,magonly=False,\
@@ -279,11 +318,10 @@ def likmatch(xdf, xcat, optdf_in, catopt, radecerr = False, r0=2.5,rsearch=5.0, 
 		print("x/opt catalogs should be the astropy coordinate objects computed from the dataframes!!")
 		sys.exit(1)
 	'''
-	optdf = optdf_in.copy(deep=True)
+	optdf = optdf_in.copy(deep=True)	
 	optdf.set_index(numid,inplace=True)
 	#making a copy for output
-	dfout = xdf.copy(deep=True)
-	dfout.reset_index(inplace=True)
+	dfout = xdf.copy(deep=True).reset_index()
 	#Background number surface density
 	nm, rmagbin = getbkgcat(xcat,catopt,optdf,r_in = r_in, r_out=r_out,
 	nmagbin=nmagbin, magname = magname,ora=ora,odec=odec)
@@ -486,7 +524,7 @@ def likmatch_ext(
 		return match,goodmatch, R, C, lthmax
 	'''
 
-
+'''
 def finalmatch(match,goodmatch):
 	match.set_index(match.matchid.values,inplace=True)
 	mid_all = np.arange(len(match))
@@ -502,4 +540,39 @@ def finalmatch(match,goodmatch):
 	bad_bad.drop('index',axis=1,inplace=True)
 	okmatch = pd.concat([goodmatch, bad_ok])
 	return okmatch, bad_bad
+'''
+
+def finalmatch(match,lrth,LRfrac=0.5, r99=True):
+	'''
+	turn the match DF into the ``good matches''
+	the ``ok matches''
+	and the ``bad matches''
+	'''
+	if 'level_0' in match.columns:
+		match = match.drop('level_0',axis=1)
+	if 'index' in match.columns:
+		match = match.drop('index',axis=1)
+	tmp = match.set_index('matchid')
+	tmp['r99'] = tmp.xposerr * 3.5
+	grp = tmp.groupby('xid')
+	onematch = grp.filter(lambda x: len(x) == 1).reset_index()
+	multimatch = tmp.loc[np.delete(tmp.index.values, 
+		onematch.matchid.values),:].reset_index()
+	#now work on good matches
+	goodones = onematch[onematch.LR >= lrth]
+	goodmul = multimatch[multimatch.LR >= lrth]
+	grp = goodmul.groupby('xid')
+	igood = grp.apply(lambda df:df.LR/df.LR.max() >= LRfrac).values
+	goodmul = goodmul[igood].reset_index()
+	allgood = pd.concat([goodones, goodmul], ignore_index=False)
+	#now work on the ok matches
+	nogood = tmp.drop(allgood.matchid.values)
+	if r99:
+		ng_99 = nogood[nogood.dist <= nogood.r99].drop_duplicates('xid',keep=False).reset_index()
+	else:
+		ng_99 = nogood.drop_duplicates('xid',keep=False).reset_index()
+	#ng_ok = ng_99[ng_99.LR >= lrth].reset_index()
+	bad = nogood.drop(ng_99.matchid.values)
+	allok = pd.concat([allgood, ng_99], ignore_index=False)
+	return allgood, allok, bad
 

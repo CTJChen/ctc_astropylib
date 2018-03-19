@@ -89,6 +89,8 @@ def sampdist(df1, df2, sampcol,bins=10):
     except (~sampcol in df1.columns) | (~sampcol in df2.columns):
         print(sampcol, ' must be in both input dataframes')
 
+def newcol(df, colname):
+	return pd.Series(np.zeros(len(xdfall))+np.nan, index=df.index)
 
 
 
