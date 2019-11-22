@@ -5,11 +5,10 @@ sys.path.append(home+'/lib/ctc_astropylib')
 print("loading numpy, pandas, plt, units as u")
 print("setting cos_flat as flat LCDM, H=70, Om=0.3 cosmology")
 print("usually takes a few seconds")
-from ctc_observ import *
-from ctc_arrays import *
-#from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+from ctc_observ import *
+from ctc_arrays import *
 from astropy import units as u
 from astropy.cosmology import FlatLambdaCDM
 from astropy.table import Table as tab
@@ -24,7 +23,6 @@ dict_wav={'u':0.3543,'g':0.4770,'r':0.6231,'i':0.7625,'z':0.9134,
 '''
 print('matplotlib/seaborn environment settings : default init_plotting(fsize=14, lw_axis=1.0)')
 import seaborn.apionly as sns
-from pylab import *
 import matplotlib.pyplot as plt
 from ctc_plots import *
 init_plotting(fsize=14, lw_axis=1.0)
