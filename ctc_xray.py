@@ -1,6 +1,6 @@
 # this function is used to calculate K-correction for a power-law X-ray SED.
 import pandas as pd
-from scipy.interpolate import interp1d as interpol
+from scipy.interpolate import InterpolatedUnivariateSpline as interpol
 from scipy.integrate import trapz as tsum
 import numpy as np
 from ctc_stat import bayes_ci
@@ -33,7 +33,7 @@ def int_pl(x1, x2, gam, nstp=None):
     # whats this? to normalize! when calculating ``intrinsic luminosity'', assuming an intrinsic power-law spectrum of gamma=1.8
     # y0=x**(1-1.8)
     # interp_func0=interpol(y0,x)
-    interp_func = interpol(y, x)
+    interp_func = interpol(x, y)
 
     # norm=interp_func0(10.)/interp_func(10.)
     # y*=norm
@@ -284,3 +284,111 @@ def emllist(df,mosaic=False):
         df_out = df_out[df_out.ID_INST == 0.0]
         df_out.reset_index(inplace=True)
         return df_out
+
+
+#Lehmer's XRB relation:
+def lx_xrb(mstar, z, sfr, mode='standard'):
+    '''
+    Defining some parameters:
+    log alpha = 29.37\pm0.15
+    log beta = 39.28\pm0.05
+    gamma = 2.03\pm0.6
+    delta = 1.31\pm0.13
+    '''
+    logalpha = 29.37
+    logbeta = 39.28
+    gamma = 2.03
+    delta = 1.31
+    if mode == 'upper':
+        logalpha += 0.15
+        logbeta += 0.05
+        gamma += 0.6
+        delta += 0.13
+    elif mode == 'lower':
+        logalpha -= 0.15
+        logbeta -= 0.05
+        gamma -= 0.6
+        delta -= 0.13
+        
+    alpha = 10.**logalpha
+    beta = 10.**logbeta
+    lxout = alpha * (1+z)**gamma * mstar + beta * (1+z)**delta * sfr
+    return lxout
+
+def lx_xrb_aird17(mstar, z, sfr, mode='standard'):
+    '''
+    Defining some parameters:
+    log alpha = 29.37\pm0.15
+    log beta = 39.28\pm0.05
+    gamma = 2.03\pm0.6
+    delta = 1.31\pm0.13
+    '''
+    logalpha = 28.8
+    logbeta = 39.5
+    gamma = 3.9
+    delta = 0.67
+    theta = 0.86
+    if mode == 'upper':
+        logalpha += 0.08
+        logbeta += 0.06
+        gamma += 0.36
+        delta += 0.31
+        theta += 0.05
+    elif mode == 'lower':
+        logalpha -= 0.08
+        logbeta -= 0.06
+        gamma -= 0.36
+        delta -= 0.31
+        theta -= 0.05
+        
+    alpha = 10.**logalpha
+    beta = 10.**logbeta
+    lxout = alpha * (1+z)**gamma * mstar + beta * (1+z)**delta * sfr**theta
+    return lxout
+
+
+
+def lx_xrb_f13(mstar, metal, sfr, age, which='both', mode=0):
+    '''
+    define some parameters --
+    SFR should be in Msun/yr, 
+    Mstar should be in Msun/1e10
+    age should be in log (age/Gyr)
+    '''
+    gammas = np.array([40.276,-1.503,-0.423,0.425,0.136])
+    betas = np.array([40.28,-62.12,569.44,-1833.8,1968.33])
+
+    gamma_err = np.array([0.014, 0.016,  0.025, 0.009, 0.009])
+    beta_err = np.array([0.02, 1.32, 13.71, 52.14, 66.27])
+    if mode == 1:
+        gammas = gamma_err + gammas
+        betas = beta_err + betas
+    elif mode == -1:
+        gammas = gamma_err - gammas
+        betas = beta_err - betas
+    elif mode == 0:
+        gammas = gammas
+        betas = betas
+    else:
+        print('mode should be -1, 0, or 1')
+    g0 = gammas[0]
+    g1 = gammas[1]
+    g2 = gammas[2]
+    g3 = gammas[3]
+    g4 = gammas[4]
+    b0 = betas[0]
+    b1 = betas[1]
+    b2 = betas[2]
+    b3 = betas[3]
+    b4 = betas[4]
+    lxh = sfr * 10. ** (b0 + b1*metal + b2*metal**2 + b3*metal**3 + b4*metal**4) 
+    lxs = mstar * 10. ** (g0 + g1*age + g2*age**2 + g3*age**3 + g4*age**4)
+    if which == 'both':
+        return lxh + lxs
+    elif which == 'h':
+        return lxh
+    elif which == 'l':
+        return lxs
+    else:
+        print('mode should be in \'h\', \'l\', or \'both\', \n which stands for HMXB, LMXB, or both\n')
+        

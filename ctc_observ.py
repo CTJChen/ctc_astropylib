@@ -139,8 +139,15 @@ def dmod(redshift,dist=False):
 
 def makecd(ra,dec,radec=None):
     if radec is not None:
+        '''
+        set radec=1 if your radec are strings in the following format:
+        '12h43m11.6s+25d11m44.3s'
+        '''
         return cd.SkyCoord(radec)
     else:
+        '''
+        Otherwise, the default assumption is that you have ra and dec in degrees (double or float)
+        '''
         return cd.SkyCoord(ra,dec,unit=(u.degree,u.degree))
 
 

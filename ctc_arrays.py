@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table as tab
+#import statsmodels.nonparametric.api as smnp
 
 def readfits(fname):
 	return tab(fits.getdata(fname)).to_pandas()
@@ -55,6 +56,18 @@ def match_unique(id_cat1,id_cat2,d2d,d3d=None,cols=None):
 def binvalue(bins):
 	binv = [0.5*(i[0]+i[1]) for i in zip(bins,bins[1:])]
 	return binv
+
+'''
+def kde1d(arr,kernel='gau', bw=0.2):
+'''
+#use statsmodels.nonparametric.api to do density estimation
+'''
+	kde = smnp.KDEUnivariate(arr)
+	kde.fit(bw=bw,kernel=kernel)
+	xgrid = np.linspace(min(arr),max(arr),100)
+	dist_kde = kde.evaluate(xgrid)
+	return xgrid, dist_kde
+'''
 
 def sampdist(df1, df2, sampcol,bins=10):
     '''
