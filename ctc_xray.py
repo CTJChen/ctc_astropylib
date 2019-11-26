@@ -1,6 +1,6 @@
 # this function is used to calculate K-correction for a power-law X-ray SED.
 import pandas as pd
-from scipy.interpolate import InterpolatedUnivariateSpline as interpol
+from scipy.interpolate import interp1d as interpol
 from scipy.integrate import trapz as tsum
 import numpy as np
 from ctc_stat import bayes_ci
