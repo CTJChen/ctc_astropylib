@@ -14,6 +14,11 @@ from astropy import units as u
 from astropy.cosmology import FlatLambdaCDM
 from astropy.table import Table as tab
 from astropy.io import fits, ascii
+from time import gmtime, strftime
+global today
+today = strftime("%Y%m%d", gmtime())
+
+
 import log_progress
 cos_flat = FlatLambdaCDM(H0=70, Om0=0.3)
 '''
