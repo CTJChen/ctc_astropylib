@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table as tab
+import astropy.coordinates as cd
+
 #import statsmodels.nonparametric.api as smnp
 
 def readfits(fname):
@@ -94,5 +96,17 @@ def sampdist(df1, df2, sampcol,bins=10):
 def newcol(df, colname):
 	return pd.Series(np.zeros(len(xdfall))+np.nan, index=df.index)
 
-
+@np.vectorize
+def distnn(ra, dec):
+    '''
+    input RA/DECunits = deg, deg
+    '''
+    from sklearn.neighbors import NearestNeighbors
+    catc = cd.SkyCoord(ra, dec,unit=(u.deg,u.deg))
+    X = np.vstack((catc.ra.deg,catc.dec.deg)).transpose()
+    nbrs = NearestNeighbors(n_neighbors=2, algorithm='ball_tree').fit(X)
+    distances, indices = nbrs.kneighbors(X)
+    distarcsec = distances[:,1]*3600. #return distance in arcsec
+    nnidx = indices[:,1]
+    return distarcsec, nnidx
 

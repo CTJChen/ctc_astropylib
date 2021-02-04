@@ -21,23 +21,26 @@ import astropy.coordinates as cd
 # takes in wise(AB) and converts to Jy or microJy
 
 
+
 def wise_mag_to_jy(wise_mag, corr=None, mujy=None, tomag=None):
     mag_cor = np.asarray([0.03, 0.04, 0.03, 0.03])
-    wise_jy = np.zeros(4, dtype='float64')
     fiso_wise = np.asarray([309.540, 171.787, 31.674, 8.363])  # in Jy
     if corr is True:
         wise_mag += mag_cor
     if tomag is None:
-        wise_jy = 10**(-wise_mag/2.5)*fiso_wise   # convert to Jy
+        wise_jy = np.zeros_like(wise_mag)
+        for i in range(4):
+            wise_jy[i,:] = 10**(-wise_mag[i,:]/2.5)*fiso_wise[i]   # convert to Jy
         if mujy is True:
             wise_jy = 1e6*wise_jy
         return wise_jy
     elif tomag is True:
         if mujy is True:
             wise_mag = wise_mag/1e6
-        wise_jy = -2.5*np.log10(wise_mag/fiso_wise)
+        wise_jy = np.zeros_like(wise_mag)
+        for i in range(4):
+            wise_jy[i,:] = -2.5*np.log10(wise_mag[i,:]/fiso_wise[i])
         return wise_jy
-
 
 # convert a flux to nulnu at a certain wavelength in the unit of erg/s
 # wav should be in micron, and flux should be in Jy

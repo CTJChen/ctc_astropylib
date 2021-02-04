@@ -123,3 +123,34 @@ def get_distnn(ra, dec, algorithm='auto'):
     idnn = indices[:,1]
     return distnn,idnn
 
+def sample_empirical_dist(xarr, size=None, finite=True):
+    # https://stackoverflow.com/questions/2745329/
+    # how-to-make-scipy-interpolate-give-an-extrapolated-result-beyond-the-input-range
+    from scipy.interpolate import interp1d
+    from statsmodels.distributions.empirical_distribution import ECDF
+    ecdf = ECDF(x)
+    def extrap1d(interpolator):
+        xs = interpolator.x
+        ys = interpolator.y
+        def pointwise(x):
+            if x < xs[0]:
+                return ys[0]+(x-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+            elif x > xs[-1]:
+                return ys[-1]+(x-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+            else:
+                return interpolator(x)
+        def ufunclike(xs):
+            return array(list(map(pointwise, array(xs))))
+        return ufunclike    
+    inv_cdf = extrap1d(interp1d(ecdf.y,ecdf.x,
+        bounds_error=False, assume_sorted=True))    
+    if size is None:
+        # if size is not set, the output array has the same length as input x-array
+        size = len(xarr)
+    r = np.random.uniform(0, 1, size)
+    ys = inv_cdf(r)
+    if finite:
+        while sum(~np.isfinite(ys)) > 1:
+            ys[~np.isfinite(ys)] = inv_cdf(np.random.uniform(0, 1, sum(~np.isfinite(ys))))
+    return ys
+
