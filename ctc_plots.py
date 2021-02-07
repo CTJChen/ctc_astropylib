@@ -141,7 +141,9 @@ def init_plotting(fsize=None,lw_axis=None):
     plt.rcParams['ytick.minor.size'] = 4
     plt.rcParams['ytick.major.width'] = 1
     plt.rcParams['ytick.minor.width'] = 1
-    plt.rcParams['legend.frameon'] = False
+    plt.rcParams['xtick.minor.visible'] = True
+    plt.rcParams['ytick.minor.visible'] = True
+    plt.rcParams['legend.frameon'] = True
     plt.rcParams['legend.loc'] = 'center left'
     plt.rcParams['axes.linewidth'] = lw_axis
     plt.gca().spines['right'].set_color('none')
@@ -149,3 +151,11 @@ def init_plotting(fsize=None,lw_axis=None):
     plt.gca().xaxis.set_ticks_position('bottom')
     plt.gca().yaxis.set_ticks_position('left')
     plt.interactive(False)
+
+
+def abline(slope=1, intercept=0):
+    """Plot a line from slope and intercept"""
+    axes = plt.gca()
+    x_vals = np.array(axes.get_xlim())
+    y_vals = intercept + slope * x_vals
+    plt.plot(x_vals, y_vals, '--')

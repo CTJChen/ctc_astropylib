@@ -21,55 +21,26 @@ import astropy.coordinates as cd
 # takes in wise(AB) and converts to Jy or microJy
 
 
-def makereg(ra,dec,fname,radius=15.,color='green',text=None):
-    '''
-    Takes RA/DEC/fname
-    write the RA/DECs into circular ds9 regions
-    '''
-    f = open(fname,'w')
-    comments = 'global color=' + color+' dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'
-    comments += ' fk5\n'
-    if np.isscalar(radius):
-        radius = str(radius)
-        f.write(comments)
-        for index,r in enumerate(ra):
-            f.write('circle(' + 
-                    str(np.round(r,6)) + ',' + 
-                    str(np.round(dec[index],6)) + ', '+radius+'\")\n')
-        f.close()
-    elif text is None:
-        f.write(comments)
-        for index,r in enumerate(ra):
-            f.write('circle(' + 
-                    str(np.round(r,6)) + ',' + 
-                    str(np.round(dec[index],6)) + ', '+str(radius[index])+'\")\n')
-        f.close()
-    else:
-        f.write(comments)
-        for index,r in enumerate(ra):
-            f.write('circle(' + 
-                    str(np.round(r,6)) + ',' + 
-                    str(np.round(dec[index],6)) + ', '+str(radius[index])+'\") # text={' + str(text[index]) + '}\n')
-        f.close()
-         # text={test}
 
 def wise_mag_to_jy(wise_mag, corr=None, mujy=None, tomag=None):
     mag_cor = np.asarray([0.03, 0.04, 0.03, 0.03])
-    wise_jy = np.zeros(4, dtype='float64')
     fiso_wise = np.asarray([309.540, 171.787, 31.674, 8.363])  # in Jy
     if corr is True:
         wise_mag += mag_cor
     if tomag is None:
-        wise_jy = 10**(-wise_mag/2.5)*fiso_wise   # convert to Jy
+        wise_jy = np.zeros_like(wise_mag)
+        for i in range(4):
+            wise_jy[i,:] = 10**(-wise_mag[i,:]/2.5)*fiso_wise[i]   # convert to Jy
         if mujy is True:
             wise_jy = 1e6*wise_jy
         return wise_jy
     elif tomag is True:
         if mujy is True:
             wise_mag = wise_mag/1e6
-        wise_jy = -2.5*np.log10(wise_mag/fiso_wise)
+        wise_jy = np.zeros_like(wise_mag)
+        for i in range(4):
+            wise_jy[i,:] = -2.5*np.log10(wise_mag[i,:]/fiso_wise[i])
         return wise_jy
-
 
 # convert a flux to nulnu at a certain wavelength in the unit of erg/s
 # wav should be in micron, and flux should be in Jy
