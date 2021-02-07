@@ -154,8 +154,7 @@ def makecd(ra,dec,radec=None):
         return cd.SkyCoord(ra,dec,unit=(u.degree,u.degree))
 
 
-
-def makereg(ra,dec,fname,radius=15.,color='green'):
+def makereg(ra,dec,fname,radius=15.,color='green',text=None):
     '''
     Takes RA/DEC/fname
     write the RA/DECs into circular ds9 regions
@@ -163,14 +162,29 @@ def makereg(ra,dec,fname,radius=15.,color='green'):
     f = open(fname,'w')
     comments = 'global color=' + color+' dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'
     comments += ' fk5\n'
-    radius = str(radius)
-    f.write(comments)
-    for index,r in enumerate(ra):
-        f.write('circle(' + 
-                str(np.round(r,6)) + ',' + 
-                str(np.round(dec[index],6)) + ', '+radius+'\")\n')
-    f.close()        
-
+    if np.isscalar(radius):
+        radius = str(radius)
+        f.write(comments)
+        for index,r in enumerate(ra):
+            f.write('circle(' + 
+                    str(np.round(r,6)) + ',' + 
+                    str(np.round(dec[index],6)) + ', '+radius+'\")\n')
+        f.close()
+    elif text is None:
+        f.write(comments)
+        for index,r in enumerate(ra):
+            f.write('circle(' + 
+                    str(np.round(r,6)) + ',' + 
+                    str(np.round(dec[index],6)) + ', '+str(radius[index])+'\")\n')
+        f.close()
+    else:
+        f.write(comments)
+        for index,r in enumerate(ra):
+            f.write('circle(' + 
+                    str(np.round(r,6)) + ',' + 
+                    str(np.round(dec[index],6)) + ', '+str(radius[index])+'\") # text={' + str(text[index]) + '}\n')
+        f.close()
+         # text={test}
 
 def angular_sep(ra1,dec1,ra2,dec2,deg=False):
     '''
