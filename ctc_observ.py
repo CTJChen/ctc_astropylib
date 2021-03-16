@@ -162,15 +162,9 @@ def makereg(ra,dec,fname,radius=15.,color='green',text=None):
     f = open(fname,'w')
     comments = 'global color=' + color+' dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'
     comments += ' fk5\n'
-    if np.isscalar(radius):
-        radius = str(radius)
-        f.write(comments)
-        for index,r in enumerate(ra):
-            f.write('circle(' + 
-                    str(np.round(r,6)) + ',' + 
-                    str(np.round(dec[index],6)) + ', '+radius+'\")\n')
-        f.close()
-    elif text is None:
+    if np.isscalar(radius) and not np.isscalar(ra):
+        radius = [str(radius) for i in range(len(ra))]
+    if text is None:
         f.write(comments)
         for index,r in enumerate(ra):
             f.write('circle(' + 
@@ -185,6 +179,7 @@ def makereg(ra,dec,fname,radius=15.,color='green',text=None):
                     str(np.round(dec[index],6)) + ', '+str(radius[index])+'\") # text={' + str(text[index]) + '}\n')
         f.close()
          # text={test}
+
 
 def angular_sep(ra1,dec1,ra2,dec2,deg=False):
     '''
