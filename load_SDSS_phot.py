@@ -30,12 +30,16 @@ def load_SDSS_phot_dr7(ra,dec,search_radius,pandas=None,ver=None,columns=None):
         values = {'cmd': sSQL_query,
                             'format': 'csv'}
         data = urllib.parse.urlencode(values)
+        data = data.encode('utf-8')
+
         request = urllib.request.Request(sURL, data)
         response = urllib.request.urlopen(request)
         return response.read()
         
     sql_str=gen_SDSS_sql(ra,dec,search_radius)
     sdss_ds=query_SDSS(sql_str)
+    sdss_ds = sdss_ds.decode('utf-8')
+    
     lines=sdss_ds.split('\n')
     nobj=len(lines)-2
     if ver:print((str(nobj)+' SDSS objects found'))
@@ -81,12 +85,14 @@ def load_SDSS_phot_dr12(ra,dec,search_radius,pandas=None,ver=None,columns=None):
         values = {'cmd': sSQL_query,
                             'format': 'csv'}
         data = urllib.parse.urlencode(values)
+        data = data.encode('utf-8')
         request = urllib.request.Request(sURL, data)
         response = urllib.request.urlopen(request)
         return response.read()
         
     sql_str=gen_SDSS_sql(ra,dec,search_radius)
     sdss_ds=query_SDSS(sql_str)
+    sdss_ds = sdss_ds.decode('utf-8')
     lines=sdss_ds.split('\n')
     nobj=len(lines)-2
     if ver:print((str(nobj)+' SDSS objects found'))
