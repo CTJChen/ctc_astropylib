@@ -164,6 +164,11 @@ def makereg(ra,dec,fname,radius=15.,color='green',text=None):
     comments += ' fk5\n'
     if np.isscalar(radius) and not np.isscalar(ra):
         radius = [str(radius) for i in range(len(ra))]
+    else:
+        radius = np.atleast_1d(radius)
+        ra = np.atleast_1d(ra)
+        dec = np.atleast_1d(dec)
+        
     if text is None:
         f.write(comments)
         for index,r in enumerate(ra):
