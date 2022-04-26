@@ -8,6 +8,7 @@ from ctc_observ import *
 from ctc_arrays import *
 from scipy.integrate import quad
 import os
+from scipy import stats
 #simid = os.environ['simid']
 #home = '/Users/cuc36'
 __doc__ = " "
@@ -235,3 +236,44 @@ def NS_hard(flux,dnds = False):
 			K * (1/(g1-1)) * flux[flux < sb]**(1-g1)
 			ns[flux >= sb] = K*(1/(g2-1)) * (sb**(g2-g1)) * (flux[flux >= sb]**(1-g2))
 		return ns
+
+
+@np.vectorize
+def expected_sky_count(mu_n, k):
+    k = int(k)
+    mu_s_list = np.zeros(k+1)
+    weights_list = np.zeros(k+1)
+    #mu_s_bar_0 = (-1. * mu_n + np.sqrt(mu_n**2 + 4.) )/2.
+    mu_s_bar_0 = k
+    # zero-count prob
+    #prob_0 = (1. - mu_n/np.sqrt(mu_n**2 + 4.) )**k
+    prob_0 = stats.poisson.pmf(k, mu=mu_s_bar_0) * stats.poisson.pmf(0, mu=mu_n)
+    mu_s_list[0] = mu_s_bar_0
+    weights_list[0] = prob_0
+    for k_n in np.arange(1,k+1):
+        k_n = float(k_n)
+        mu_s_bar = ((k -k_n) * mu_n)/ k_n 
+        #prob = (float(factorial(k)) / (factorial(k_n) * factorial(k - k_n))) * ((k-k_n)**(k-k_n)*(k_n)**(k_n)/(k**k))
+        prob = stats.poisson.pmf(k-k_n, mu = mu_s_bar) * stats.poisson.pmf(k_n, mu= mu_n)
+        #poisson(k-k_n, mu_s_bar) * poisson(k_n, mu_n)
+        #prob = (k_n**k_n * (k - k_n)**(k - k_n))/(k**k)
+        mu_s_list[int(k_n)] = mu_s_bar
+        weights_list[int(k_n)] = prob
+    mu_s_star = np.average(mu_s_list,weights=weights_list)
+    err_mu = np.sqrt(np.cov(mu_s_list,aweights = weights_list))
+    return mu_s_star, err_mu
+
+def bkgsub(img,bkgrate,exp=None):
+    # expected background count = bkg count/s * exp
+    # if bkg is in counts already, exp is not needed.
+    assert img.shape == bkgrate.shape
+    if exp is not None:
+        assert img.shape == exp.shape
+    else:
+        exp = np.ones_like(img)
+    bkg = bkgrate * exp
+    bkgflat = bkg.ravel()
+    imgflat = img.ravel()
+    mu_s_flat, mu_s_err_flat = expected_sky_count(bkgflat, imgflat)
+    mu_s = mu_s_flat.reshape(img.shape)
+    return mu_s
