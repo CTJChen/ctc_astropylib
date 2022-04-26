@@ -40,3 +40,4 @@ from pylab import *
 import matplotlib.pyplot as plt
 from ctc_plots import *
 init_plotting(fsize=14, lw_axis=1.0)
+from matplotlib.colors import LogNorm
