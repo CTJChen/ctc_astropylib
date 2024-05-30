@@ -2,11 +2,7 @@ from os.path import expanduser
 home = expanduser("~")
 import sys
 sys.path.append(home+'/lib/ctc_astropylib')
-#import log_progress 
-# for jupyternotebook progress bar display...
 from tqdm.notebook import tqdm as log_progress
-
-
 from time import gmtime, strftime
 global today
 today = strftime("%Y%m%d", gmtime())
