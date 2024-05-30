@@ -16,7 +16,7 @@ import numpy as np
 from astropy.coordinates.distances import Distance
 from astropy import units as u
 import scipy.constants as c
-from astropy.cosmology import FlatLambdaCDM
+#from astropy.cosmology import FlatLambdaCDM
 import astropy.coordinates as cd
 # takes in wise(AB) and converts to Jy or microJy
 
@@ -65,11 +65,11 @@ def magerr_to_ferr(flux, magerr):
     return fluxerr
 
 
-def ab_to_jy(inp, tomag=None, mujy=None):
-    if tomag is None:
-        out = 3631*10**(-inp/2.5)
-    else:
+def ab_to_jy(inp, tomag=False, mujy=False):
+    if tomag:
         out = 2.5*(23.-np.log10(inp))-48.6
+    else:
+        out = 3631*10**(-inp/2.5)
     if mujy is True:
         out = 1e6*out
     return out

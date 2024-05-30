@@ -146,6 +146,7 @@ def init_plotting(fsize=None,lw_axis=None):
     plt.rcParams['legend.frameon'] = True
     plt.rcParams['legend.loc'] = 'center left'
     plt.rcParams['axes.linewidth'] = lw_axis
+    plt.rcParams['axes.grid'] = True
     plt.gca().spines['right'].set_color('none')
     plt.gca().spines['top'].set_color('none')
     plt.gca().xaxis.set_ticks_position('bottom')
@@ -159,3 +160,155 @@ def abline(slope=1, intercept=0):
     x_vals = np.array(axes.get_xlim())
     y_vals = intercept + slope * x_vals
     plt.plot(x_vals, y_vals, '--')
+
+def contour2d(
+    x,y,bins=20,
+    drange=None,
+    levels=None,
+    smooth=None,
+    ax=None,
+    contour_kwargs=None,
+    contourf_kwargs=None,
+    force_range=False,
+    **kwargs,):
+    """
+    Based on hist2d of corner.py:
+    https://doi.org/10.21105/joss.00024    
+
+    Take the contour of the 2d histogram 
+
+    Parameters
+    ----------
+    x : array_like[nsamples,]
+       The samples.
+
+    y : array_like[nsamples,]
+       The samples.
+
+    levels : array_like in sigma, assuming Gaussian distribution. 
+        If None, (0.5, 1, 1.5, 2)-sigma equivalent contours are drawn,
+        i.e., containing 11.8%, 39.3%, 67.5% and 86.4% of the samples.
+        See https://corner.readthedocs.io/en/latest/pages/sigmas/
+
+    ax : matplotlib.Axes
+        A axes instance on which to add the 2-D histogram.
+
+    contour_kwargs : dict
+        Any additional keyword arguments to pass to the `contour` method.
+
+    """
+
+    if ax is None:
+        ax = plt.gca()
+
+    # Set the default range based on the data range if not provided.
+    if drange is None:
+        drange = [[x.min(), x.max()], [y.min(), y.max()]]
+
+    # Set up the default plotting arguments.
+
+    color = matplotlib.rcParams["ytick.color"]
+
+    # Choose the default "sigma" contour levels.
+    if levels is None:
+        levels = 1.0 - np.exp(-0.5 * np.arange(0.5, 2.1, 0.5) ** 2)
+    else:
+        levels = 1.0 - np.exp(-0.5 * levels ** 2)
+
+    # Parse the bin specifications.
+    try:
+        bins = [int(bins) for _ in drange]
+    except TypeError:
+        if len(bins) != len(drange):
+            raise ValueError("Dimension mismatch between bins and drange")
+
+    # We'll make the 2D histogram to directly estimate the density.
+    bins_2d = []
+    bins_2d.append(np.linspace(min(drange[0]), max(drange[0]), bins[0] + 1))
+
+    bins_2d.append(np.linspace(min(drange[1]), max(drange[1]), bins[1] + 1))
+
+    try:
+        H, X, Y = np.histogram2d(
+            x.flatten(),
+            y.flatten(),
+            bins=bins_2d
+        )
+    except ValueError:
+        raise ValueError(
+            "It looks like at least one of your sample columns "
+            "have no dynamic drange. You could try using the "
+            "'drange' argument."
+        )
+
+    if H.sum() == 0:
+        raise ValueError(
+            "It looks like the provided 'drange' is not valid "
+            "or the sample is empty."
+        )
+
+    if smooth is not None:
+        if gaussian_filter is None:
+            raise ImportError("Please install scipy for smoothing")
+        H = gaussian_filter(H, smooth)
+
+
+
+    Hflat = H.flatten()
+    inds = np.argsort(Hflat)[::-1]
+    Hflat = Hflat[inds]
+    sm = np.cumsum(Hflat)
+    sm /= sm[-1]
+    V = np.empty(len(levels))
+    for i, v0 in enumerate(levels):
+        try:
+            V[i] = Hflat[sm <= v0][-1]
+        except IndexError:
+            V[i] = Hflat[0]
+    V.sort()
+    m = np.diff(V) == 0
+    if np.any(m):
+        raise ValueError("Too few points to create valid contours")
+    while np.any(m):
+        V[np.where(m)[0][0]] *= 1.0 - 1e-4
+        m = np.diff(V) == 0
+    V.sort()
+
+    # Compute the bin centers.
+    X1, Y1 = 0.5 * (X[1:] + X[:-1]), 0.5 * (Y[1:] + Y[:-1])
+
+    # Extend the array for the sake of the contours at the plot edges.
+    H2 = H.min() + np.zeros((H.shape[0] + 4, H.shape[1] + 4))
+    H2[2:-2, 2:-2] = H
+    H2[2:-2, 1] = H[:, 0]
+    H2[2:-2, -2] = H[:, -1]
+    H2[1, 2:-2] = H[0]
+    H2[-2, 2:-2] = H[-1]
+    H2[1, 1] = H[0, 0]
+    H2[1, -2] = H[0, -1]
+    H2[-2, 1] = H[-1, 0]
+    H2[-2, -2] = H[-1, -1]
+    X2 = np.concatenate(
+        [
+            X1[0] + np.array([-2, -1]) * np.diff(X1[:2]),
+            X1,
+            X1[-1] + np.array([1, 2]) * np.diff(X1[-2:]),
+        ]
+    )
+    Y2 = np.concatenate(
+        [
+            Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]),
+            Y1,
+            Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),
+        ]
+    )
+
+
+    # Plot the contour edge colors.
+    if contour_kwargs is None:
+        contour_kwargs = dict()
+    contour_kwargs["colors"] = contour_kwargs.get("colors", color)
+    cs = ax.contour(X2, Y2, H2.T, V, **contour_kwargs,antialiased=True)
+
+    return cs
+
