@@ -10,6 +10,12 @@ import astropy.coordinates as cd
 
 #import statsmodels.nonparametric.api as smnp
 
+def linspacearr(arr,nbins):
+	'''
+	Return a np.linspace array with min/max of arr and nbins
+	'''
+	return np.linspace(np.min(arr),np.max(arr),nbins)
+
 def readfits(fname):
 	return tab(fits.getdata(fname)).to_pandas()
 
